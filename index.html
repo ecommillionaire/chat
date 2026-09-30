@@ -66,12 +66,9 @@
   .chat input { margin: 3px; padding: 5px 8px; font-size: 14px; }
 
   #keybox { border-top: 1px solid var(--line); padding: 10px 6px 4px; font-size: 13px; }
-  #keybox .row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  #keybox code { flex: 1; background: var(--raise); border-radius: 8px; padding: 5px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
   #keybox .btns { display: flex; flex-wrap: wrap; gap: 6px; }
   #keybox .btns button { padding: 5px 10px; font-size: 13px; border: 1px solid var(--line); }
   #keybox .btns button:hover { background: var(--raise); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 
   #main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
   #top { display: flex; align-items: center; gap: 4px; padding: 8px 10px 4px; }
@@ -172,8 +169,8 @@
   <form class="card" id="gateform">
     <svg class="logo" viewBox="0 0 512 512" style="stroke:none"><rect width="512" height="512" rx="112" fill="#10a37f"/><path d="M150 156h170a58 58 0 0 1 58 58v70a58 58 0 0 1-58 58h-74l-66 52v-52h-30a58 58 0 0 1-58-58v-70a58 58 0 0 1 58-58Z" fill="#fff"/></svg>
     <div id="gate-unlock" hidden>
-      <h1>Welcome back</h1>
-      <p class="muted">Type your password to unlock your saved key.</p>
+      <h1>Welcome to Parley</h1>
+      <p class="muted">Enter the password to start chatting.</p>
       <input type="password" id="gatepass" placeholder="Password" autocomplete="current-password">
     </div>
     <div id="gate-new" hidden>
@@ -195,13 +192,10 @@
     <input id="search" type="search" placeholder="Search chats" autocomplete="off">
     <nav id="list"></nav>
 
-    <!-- your key, at the bottom -->
     <div id="keybox">
-      <div class="row"><span class="dot"></span><code id="keyhint"></code></div>
       <div class="btns">
-        <button id="copykey">Copy key</button>
-        <button id="lockkey">Lock into page</button>
         <button id="settingsbtn">Settings</button>
+        <button id="logout">Log out</button>
       </div>
     </div>
   </aside>
@@ -242,18 +236,6 @@
   <div class="dbody" id="modellist"></div>
 </dialog>
 
-<!-- ---------- lock key ---------- -->
-<dialog id="lock">
-  <div class="dhead"><h3>Lock your key into the page</h3><button class="icon" data-close>✕</button></div>
-  <div class="dbody">
-    <p class="muted small" style="margin-top:0">Pick a password. You'll get a new copy of this page with your key saved inside it, scrambled so only your password can open it. Put that file on your website in place of the old one. Then on any computer, open the site and type the password.</p>
-    <label>Password<input type="password" id="lockpass" autocomplete="new-password"></label>
-    <label>Type it again<input type="password" id="lockpass2" autocomplete="new-password"></label>
-    <p class="err" id="lockerr"></p>
-    <button class="primary" id="lockgo" style="width:100%">Download locked page</button>
-  </div>
-</dialog>
-
 <!-- ---------- settings ---------- -->
 <dialog id="settings">
   <div class="dhead"><h3>Settings</h3><button class="icon" data-close>✕</button></div>
@@ -262,7 +244,6 @@
     <label>Theme<select id="theme"><option value="system">System</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
     <button class="primary" id="savesettings" style="width:100%">Save</button>
     <p class="muted small">Chats are saved in this browser only.</p>
-    <button class="ghost line" id="forget">Remove key from this browser</button>
   </div>
 </dialog>
 
@@ -271,11 +252,8 @@
 <script>
 'use strict';
 
-// Your OpenRouter key, locked with your password. Filled in by "Lock into page".
-const LOCKED = /*LOCKED*/""/*LOCKED*/;
-
-// A copy of this page as it was loaded, used to make the locked version.
-const PAGE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+// The site's OpenRouter key, locked with the site password.
+const LOCKED = /*LOCKED*/"zIW+4fMSuvfRgZOMJZINl9/lEmS+YKJYxxkkEOCVi3HEOrEl5Werr2t/udRgovmps/FPkxVL658Obng8f4eC96/i6ozdD/o52As21S08D18LKe9Oc2rUn8ASLBnSDHSpV3HmUN1UCo5PsBhJIMw/514FLhEY"/*LOCKED*/;
 
 const API = 'https://openrouter.ai/api/v1';
 const $ = (s) => document.querySelector(s);
@@ -336,13 +314,6 @@ async function passKey(password, salt) {
   return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
 
-async function lockText(text, password) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await passKey(password, salt), new TextEncoder().encode(text)));
-  return b64(new Uint8Array([...salt, ...iv, ...ct]));
-}
-
 async function unlockText(blob, password) {
   const all = unb64(blob);
   const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: all.slice(16, 28) }, await passKey(password, all.slice(0, 16)), all.slice(28));
@@ -374,6 +345,7 @@ $('#gateform').onsubmit = async (e) => {
     }
     state.key = key;
     store.set('key', key);
+    store.set('lock', LOCKED); // if the site key changes, everyone is asked for the password again
     startApp();
   } catch (err) {
     $('#gateerr').textContent = err.message;
@@ -646,7 +618,7 @@ async function send() {
     if (!r.ok) {
       let msg = `Request failed (${r.status})`;
       try { msg = (await r.json()).error?.message || msg; } catch {}
-      if (r.status === 401) msg = 'OpenRouter rejected your key. Check it in the sidebar.';
+      if (r.status === 401) msg = 'OpenRouter rejected the key. The site owner needs to update it.';
       throw new Error(msg);
     }
     const reader = r.body.getReader();
@@ -801,36 +773,6 @@ $('#modellist').onclick = (e) => {
   $('#models').close();
 };
 
-// ---------- key box (bottom of the sidebar) ----------
-
-function renderKey() { $('#keyhint').textContent = state.key.slice(0, 10) + '…' + state.key.slice(-4); }
-
-$('#copykey').onclick = (e) => copy(state.key, e.currentTarget);
-
-$('#lockkey').onclick = () => {
-  $('#lockpass').value = $('#lockpass2').value = '';
-  $('#lockerr').textContent = '';
-  $('#lock').showModal();
-};
-
-$('#lockgo').onclick = async () => {
-  const p = $('#lockpass').value;
-  $('#lockerr').textContent = '';
-  if (p.length < 8) { $('#lockerr').textContent = 'Use at least 8 characters.'; return; }
-  if (p !== $('#lockpass2').value) { $('#lockerr').textContent = "The passwords don't match."; return; }
-  const marker = '/*' + 'LOCKED' + '*/';
-  const parts = PAGE.split(marker);
-  if (parts.length !== 3) { $('#lockerr').textContent = 'Could not make the page. Reload and try again.'; return; }
-  const blob = await lockText(state.key, p);
-  const page = parts[0] + marker + JSON.stringify(blob) + marker + parts[2];
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([page], { type: 'text/html' }));
-  a.download = 'index.html';
-  a.click();
-  $('#lock').close();
-  toast('Downloaded. Upload this index.html to your site.');
-};
-
 // ---------- settings ----------
 
 $('#settingsbtn').onclick = () => {
@@ -846,9 +788,10 @@ $('#savesettings').onclick = () => {
   $('#settings').close();
   toast('Saved');
 };
-$('#forget').onclick = () => {
-  if (!confirm('Remove your key from this browser? Your chats stay.')) return;
+$('#logout').onclick = () => {
+  if (!confirm('Log out of this browser? Your chats stay saved here.')) return;
   store.del('key');
+  store.del('lock');
   location.reload();
 };
 
@@ -867,7 +810,6 @@ $('#newchat2').onclick = newChat;
 function startApp() {
   $('#gate').hidden = true;
   $('#app').hidden = false;
-  renderKey();
   renderList();
   renderThread();
   loadModels();
@@ -875,7 +817,7 @@ function startApp() {
 }
 
 applyTheme();
-if (state.key) startApp();
+if (state.key && (!LOCKED || store.get('lock', '') === LOCKED)) startApp();
 else showGate();
 </script>
 </body>
