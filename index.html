@@ -72,14 +72,17 @@
 
   #main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
   #top { display: flex; align-items: center; gap: 4px; padding: 8px 10px 4px; }
-  #modelbtn { font-size: 17px; font-weight: 600; padding: 6px 10px; }
+  .brand { font-size: 17px; font-weight: 600; padding: 6px 10px; letter-spacing: -.01em; }
   /* Shows the sun in dark mode (tap for light) and the moon in light mode. */
   #themebtn .moon, :root[data-theme="light"] #themebtn .sun { display: none; }
   :root[data-theme="light"] #themebtn .moon { display: block; }
-  #modelbtn span { max-width: 55vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #scroller { flex: 1; overflow-y: auto; }
   #welcome { height: 100%; display: grid; place-items: center; text-align: center; padding: 20px; }
-  #welcome h2 { font-size: 28px; font-weight: 600; margin: 0; }
+  #welcome h2 { font-size: 28px; font-weight: 600; margin: 0 0 6px; }
+  #welcome p { margin: 0 0 18px; }
+  .starters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .starters .pill { padding: 7px 14px; font-size: 14px; }
+  @media (hover: hover) { .starters .pill:hover { background: var(--raise); color: var(--ink); } }
   #thread { max-width: 780px; margin: 0 auto; padding: 8px 16px 24px; }
 
   .msg { margin-bottom: 22px; }
@@ -146,10 +149,6 @@
   .dbody { overflow-y: auto; padding: 14px 18px 18px; }
   .dbody label { display: block; font-size: 14px; color: var(--dim); margin: 12px 0 6px; }
   .dbody .primary { margin-top: 12px; }
-  .mrow { width: 100%; display: flex; justify-content: space-between; gap: 10px; text-align: left; padding: 9px 10px; }
-  .mrow:hover, .mrow.focus { background: var(--raise); }
-  .mrow.on { color: var(--accent); }
-  .mrow small { color: var(--faint); white-space: nowrap; }
 
   #toast { position: fixed; inset: auto auto 24px 50%; margin: 0; border: 0; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 12px; font-size: 14px; }
 
@@ -206,7 +205,7 @@
   <main id="main">
     <header id="top">
       <button class="icon" id="toggleside" title="Sidebar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
-      <button class="ghost" id="modelbtn"><span id="modelname">Choose a model</span><svg viewBox="0 0 24 24" style="width:16px"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="brand">chat0</div>
       <div class="grow"></div>
       <button class="icon mobile-only" id="newchat2" title="New chat"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
       <button class="icon" id="themebtn" title="Switch theme" aria-label="Switch theme">
@@ -216,7 +215,17 @@
     </header>
 
     <div id="scroller">
-      <div id="welcome"><h2>What can I help with?</h2></div>
+      <div id="welcome">
+        <div>
+          <h2>What did you get done?</h2>
+          <p class="muted">Dump your notes in any order. You'll get back a clean report.</p>
+          <div class="starters">
+            <button class="pill" data-start="Turn these notes into a work report:&#10;&#10;">Work report</button>
+            <button class="pill" data-start="Write a short daily update from these notes:&#10;&#10;">Daily update</button>
+            <button class="pill" data-start="Write a weekly summary from these notes:&#10;&#10;">Weekly summary</button>
+          </div>
+        </div>
+      </div>
       <div id="thread"></div>
     </div>
 
@@ -237,16 +246,11 @@
 </div>
 
 <!-- ---------- model picker ---------- -->
-<dialog id="models">
-  <div class="dhead"><input id="modelsearch" placeholder="Search models (try: free, claude, gpt)" autocomplete="off"><button class="icon" data-close>✕</button></div>
-  <div class="dbody" id="modellist"></div>
-</dialog>
-
 <!-- ---------- settings ---------- -->
 <dialog id="settings">
   <div class="dhead"><h3>Settings</h3><button class="icon" data-close>✕</button></div>
   <div class="dbody">
-    <label>Custom instructions<textarea id="system" rows="5" placeholder="Anything the assistant should know about you or how to answer"></textarea></label>
+    <label>Report instructions<textarea id="system" rows="9" placeholder="How reports should be written"></textarea></label>
     <button class="primary" id="savesettings" style="width:100%">Save</button>
     <p class="muted small">Chats are saved in this browser only.</p>
   </div>
@@ -261,6 +265,16 @@
 const LOCKED = /*LOCKED*/"zIW+4fMSuvfRgZOMJZINl9/lEmS+YKJYxxkkEOCVi3HEOrEl5Werr2t/udRgovmps/FPkxVL658Obng8f4eC96/i6ozdD/o52As21S08D18LKe9Oc2rUn8ASLBnSDHSpV3HmUN1UCo5PsBhJIMw/514FLhEY"/*LOCKED*/;
 
 const API = 'https://openrouter.ai/api/v1';
+
+// One model for everyone: OpenRouter picks a suitable model for each message.
+const MODEL = 'openrouter/auto';
+
+// Used unless you write your own in Settings.
+const REPORT_PROMPT = `You help turn messy brain dumps into clear, professional work reports.
+- Organize the notes into a clean report with a short title, a one or two sentence summary, then sections such as Work completed, In progress, Issues or blockers, and Next steps. Skip sections that don't apply.
+- Use short bullet points and plain, confident language. Keep every fact, name, number, date, and time from the notes.
+- Never invent details. If something important is unclear or missing, list it at the end under "Questions".
+- If the person asks for something else (an email, a shorter version, a different format), do that instead.`;
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
@@ -288,7 +302,6 @@ const state = {
   chat: null,        // the open chat
   files: [],         // attachments waiting to be sent
   web: false,
-  models: null,
   controller: null,
 };
 
@@ -532,7 +545,6 @@ function newChat() {
 function openChat(c) {
   stop();
   state.chat = c;
-  if (c.model) setModel(c.model, false);
   renderThread();
   renderList();
   $('#scroller').scrollTop = 1e9;
@@ -586,10 +598,9 @@ function stop() { state.controller?.abort(); }
 
 async function send() {
   const chat = state.chat;
-  const model = state.settings.model;
-  if (!model) { openModels(); return; }
+  const model = MODEL;
   const messages = chat.messages.map(toApi);
-  if (state.settings.system) messages.unshift({ role: 'system', content: state.settings.system });
+  messages.unshift({ role: 'system', content: state.settings.system || REPORT_PROMPT });
 
   const reply = { role: 'assistant', content: '', model };
   chat.messages.push(reply);
@@ -617,7 +628,8 @@ async function send() {
   };
 
   try {
-    const body = { model, messages, stream: true };
+    // Only use providers that don't store or train on what you send.
+    const body = { model, messages, stream: true, provider: { data_collection: 'deny' } };
     if (state.web) body.plugins = [{ id: 'web' }];
     const r = await fetch(API + '/chat/completions', {
       method: 'POST',
@@ -646,6 +658,7 @@ async function send() {
         let j;
         try { j = JSON.parse(line.slice(5)); } catch { continue; }
         if (j.error) { error = j.error.message; continue; }
+        if (j.model) reply.model = j.model; // the model OpenRouter actually picked
         const d = j.choices?.[0]?.delta || {};
         if (d.reasoning) reply.reasoning = (reply.reasoning || '') + d.reasoning;
         if (d.content) { reply.content += d.content; paint(); }
@@ -687,11 +700,10 @@ $('#composer').onsubmit = (e) => {
   const text = input.value.trim();
   if (state.controller || (!text && !state.files.length)) return;
   if (!state.chat) {
-    state.chat = { id: Date.now().toString(36), title: (text || state.files[0].name).slice(0, 60), model: state.settings.model, updated: Date.now(), messages: [] };
+    state.chat = { id: Date.now().toString(36), title: (text || state.files[0].name).slice(0, 60), updated: Date.now(), messages: [] };
     state.chats.push(state.chat);
   }
   state.chat.messages.push({ role: 'user', content: text, ...(state.files.length ? { files: state.files } : {}) });
-  state.chat.model = state.settings.model;
   input.value = '';
   state.files = [];
   $('#atts').innerHTML = '';
@@ -700,6 +712,16 @@ $('#composer').onsubmit = (e) => {
 };
 
 $('#stop').onclick = stop;
+
+// Starter buttons on the empty screen fill in the first line for you.
+$('.starters').onclick = (e) => {
+  const b = e.target.closest('[data-start]');
+  if (!b) return;
+  input.value = b.dataset.start;
+  autosize();
+  updateSend();
+  input.focus();
+};
 $('#web').onclick = () => { state.web = !state.web; $('#web').setAttribute('aria-pressed', state.web); };
 
 // Attachments: images are shrunk and sent once; text files are included as text.
@@ -727,70 +749,18 @@ $('#file').onchange = async (e) => {
 
 // ---------- models ----------
 
-const isFree = (m) => m.free;
-function modelName(id) { return state.models?.find((m) => m.id === id)?.name || id; }
-
-function setModel(id, remember = true) {
-  state.settings.model = id;
-  if (remember) store.set('settings', state.settings);
-  $('#modelname').textContent = modelName(id);
-}
-
-async function loadModels() {
-  const cached = store.get('models', null);
-  if (cached && Date.now() - cached.at < 864e5) state.models = cached.list;
-  else {
-    try {
-      const j = await (await fetch(API + '/models')).json();
-      state.models = j.data.map((m) => ({
-        id: m.id,
-        name: m.name.replace(/^[^:]+:\s*/, ''),
-        free: !+m.pricing?.prompt && !+m.pricing?.completion,
-      })).sort((a, b) => a.name.localeCompare(b.name));
-      store.set('models', { at: Date.now(), list: state.models });
-    } catch {
-      state.models = [];
-    }
-  }
-  // First visit: start on a free model.
-  if (!state.settings.model && state.models.length) setModel((state.models.find(isFree) || state.models[0]).id);
-  else if (state.settings.model) setModel(state.settings.model, false);
-  if ($('#models').open) renderModels();
-}
-
-function openModels() {
-  $('#modelsearch').value = '';
-  renderModels();
-  $('#models').showModal();
-  $('#modelsearch').focus();
-}
-
-function renderModels() {
-  if (!state.models) { $('#modellist').innerHTML = '<p class="muted">Loading…</p>'; return; }
-  const words = $('#modelsearch').value.toLowerCase().split(/\s+/).filter(Boolean);
-  const list = state.models.filter((m) => words.every((w) => (w === 'free' ? m.free : (m.name + ' ' + m.id).toLowerCase().includes(w))));
-  $('#modellist').innerHTML = list.slice(0, 200).map((m, i) =>
-    `<button class="mrow${m.id === state.settings.model ? ' on' : ''}${i === 0 ? ' focus' : ''}" data-id="${esc(m.id)}"><span>${esc(m.name)}</span><small>${m.free ? 'Free' : ''}</small></button>`).join('') || '<p class="muted">No models match.</p>';
-}
-
-$('#modelbtn').onclick = openModels;
-$('#modelsearch').oninput = renderModels;
-$('#modelsearch').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#modellist .mrow')?.click(); } };
-$('#modellist').onclick = (e) => {
-  const row = e.target.closest('.mrow');
-  if (!row) return;
-  setModel(row.dataset.id);
-  $('#models').close();
-};
+// "anthropic/claude-x" -> "claude-x"
+function modelName(id) { return id === MODEL ? 'Auto' : id.split('/').pop(); }
 
 // ---------- settings ----------
 
 $('#settingsbtn').onclick = () => {
-  $('#system').value = state.settings.system || '';
+  $('#system').value = state.settings.system || REPORT_PROMPT;
   $('#settings').showModal();
 };
 $('#savesettings').onclick = () => {
-  state.settings.system = $('#system').value.trim();
+  const sys = $('#system').value.trim();
+  state.settings.system = sys === REPORT_PROMPT.trim() ? '' : sys; // empty means use the default
   store.set('settings', state.settings);
   applyTheme();
   $('#settings').close();
@@ -820,7 +790,6 @@ function startApp() {
   $('#app').hidden = false;
   renderList();
   renderThread();
-  loadModels();
   input.focus();
 }
 
