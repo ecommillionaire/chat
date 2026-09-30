@@ -135,7 +135,7 @@
   #atts img { width: 28px; height: 28px; object-fit: cover; border-radius: 6px; }
   .pill { border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; font-size: 13px; color: var(--dim); }
   .pill svg { width: 16px; height: 16px; }
-  .pill[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+  .pill[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
   .send { width: 36px; height: 36px; padding: 0; border-radius: 50%; justify-content: center; background: var(--ink); color: var(--bg); }
   .send svg { width: 18px; height: 18px; stroke-width: 2.4; }
   #stop svg { fill: currentColor; stroke: none; }
@@ -234,7 +234,7 @@
       <textarea id="input" rows="1" placeholder="Message chat0"></textarea>
       <div class="row">
         <button type="button" class="icon" id="attach" title="Attach images or text files"><svg viewBox="0 0 24 24"><path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l8-8"/></svg></button>
-        <button type="button" class="pill" id="web" aria-pressed="false" title="Let the model search the web"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span>Web Search</span></button>
+        <button type="button" class="pill" id="web" aria-pressed="false" title="Let the model search the web"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span id="webtext">Web Search: OFF</span></button>
         <div class="grow"></div>
         <button type="submit" class="send" id="send" title="Send" disabled><svg viewBox="0 0 24 24"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg></button>
         <button type="button" class="send" id="stop" title="Stop" hidden><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg></button>
@@ -295,8 +295,18 @@ const store = {
   del(k) { try { localStorage.removeItem('parley.' + k); } catch {} },
 };
 
+// The unlocked key is kept only for this tab. Closing the tab forgets it,
+// so the password is needed again next time. Chats stay saved.
+const session = {
+  get(k) { try { return sessionStorage.getItem('chat0.' + k); } catch { return null; } },
+  set(k, v) { try { sessionStorage.setItem('chat0.' + k, v); } catch {} },
+  clear() { try { sessionStorage.clear(); } catch {} },
+};
+store.del('key'); // older versions remembered the key in the browser for good
+store.del('lock');
+
 const state = {
-  key: store.get('key', null),
+  key: session.get('key'),
   chats: store.get('chats', []),
   settings: store.get('settings', {}),
   chat: null,        // the open chat
@@ -363,8 +373,8 @@ $('#gateform').onsubmit = async (e) => {
       if (!key.startsWith('sk-')) throw new Error("That doesn't look like an OpenRouter key.");
     }
     state.key = key;
-    store.set('key', key);
-    store.set('lock', LOCKED); // if the site key changes, everyone is asked for the password again
+    session.set('key', key);
+    session.set('lock', LOCKED); // if the site key changes, the password is asked for again
     startApp();
   } catch (err) {
     $('#gateerr').textContent = err.message;
@@ -722,7 +732,11 @@ $('.starters').onclick = (e) => {
   updateSend();
   input.focus();
 };
-$('#web').onclick = () => { state.web = !state.web; $('#web').setAttribute('aria-pressed', state.web); };
+$('#web').onclick = () => {
+  state.web = !state.web;
+  $('#web').setAttribute('aria-pressed', state.web);
+  $('#webtext').textContent = 'Web Search: ' + (state.web ? 'ON' : 'OFF');
+};
 
 // Attachments: images are shrunk and sent once; text files are included as text.
 $('#attach').onclick = () => $('#file').click();
@@ -767,9 +781,8 @@ $('#savesettings').onclick = () => {
   toast('Saved');
 };
 $('#logout').onclick = () => {
-  if (!confirm('Log out of this browser? Your chats stay saved here.')) return;
-  store.del('key');
-  store.del('lock');
+  if (!confirm('Log out? Your chats stay saved here.')) return;
+  session.clear();
   location.reload();
 };
 
@@ -794,7 +807,7 @@ function startApp() {
 }
 
 applyTheme();
-if (state.key && (!LOCKED || store.get('lock', '') === LOCKED)) startApp();
+if (state.key && (!LOCKED || session.get('lock') === LOCKED)) startApp();
 else showGate();
 </script>
 </body>
