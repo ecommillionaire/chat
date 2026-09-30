@@ -281,8 +281,8 @@ const store = {
   del(k) { try { localStorage.removeItem('parley.' + k); } catch {} },
 };
 
-// The unlocked key is kept only for this tab. Closing the tab forgets it,
-// so the password is needed again next time. Chats stay saved.
+// The unlocked key is kept only for this tab, and only survives a refresh
+// (see the start of the page below). Chats stay saved.
 const session = {
   get(k) { try { return sessionStorage.getItem('chat0.' + k); } catch { return null; } },
   set(k, v) { try { sessionStorage.setItem('chat0.' + k, v); } catch {} },
@@ -783,6 +783,11 @@ function startApp() {
 }
 
 applyTheme();
+// Stay signed in only when an open tab is refreshed. Browsers can bring a
+// closed tab's storage back when it's reopened, so any other way of opening
+// the site asks for the password again.
+const reloaded = performance.getEntriesByType('navigation')[0]?.type === 'reload';
+if (!reloaded) { session.clear(); state.key = null; }
 if (state.key && (!LOCKED || session.get('lock') === LOCKED)) startApp();
 else showGate();
 </script>
