@@ -236,7 +236,7 @@
 <dialog id="settings">
   <div class="dhead"><h3>Settings</h3><button class="icon" data-close>✕</button></div>
   <div class="dbody">
-    <label>Report instructions<textarea id="system" rows="9" placeholder="How reports should be written"></textarea></label>
+    <label>Instructions<textarea id="system" rows="9" placeholder="How the assistant should answer"></textarea></label>
     <button class="primary" id="savesettings" style="width:100%">Save</button>
     <p class="muted small">Chats are saved in this browser only.</p>
   </div>
@@ -255,12 +255,13 @@ const API = 'https://openrouter.ai/api/v1';
 // One model for everyone: OpenRouter picks a suitable model for each message.
 const MODEL = 'openrouter/auto';
 
-// Used unless you write your own in Settings.
-const REPORT_PROMPT = `You help turn messy brain dumps into clear, professional work reports.
-- Organize the notes into a clean report with a short title, a one or two sentence summary, then sections such as Work completed, In progress, Issues or blockers, and Next steps. Skip sections that don't apply.
-- Use short bullet points and plain, confident language. Keep every fact, name, number, date, and time from the notes.
-- Never invent details. If something important is unclear or missing, list it at the end under "Questions".
-- If the person asks for something else (an email, a shorter version, a different format), do that instead.`;
+// Default instructions, used unless you write your own in Settings.
+const DEFAULT_PROMPT = `You are a helpful, honest assistant.
+- Be accurate. Never make up facts, names, numbers, quotes, sources, or links. If you don't know or aren't sure, say so plainly.
+- When working from the user's notes or files, stick to what they say and keep every detail (names, numbers, dates). Don't add things that aren't there.
+- If a request is unclear or missing something important, ask a short question or state your assumption.
+- Be clear and concise. Get to the point, use plain language, and use headings or bullet points only when they help.
+- When asked to write something up (a report, summary, email), make it clean and well organized, and match the tone the user wants.`;
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
@@ -596,7 +597,7 @@ async function send() {
   const chat = state.chat;
   const model = MODEL;
   const messages = chat.messages.map(toApi);
-  messages.unshift({ role: 'system', content: state.settings.system || REPORT_PROMPT });
+  messages.unshift({ role: 'system', content: state.settings.system || DEFAULT_PROMPT });
 
   const reply = { role: 'assistant', content: '', model };
   chat.messages.push(reply);
@@ -745,12 +746,12 @@ function modelName(id) { return id === MODEL ? 'Auto' : id.split('/').pop(); }
 // ---------- settings ----------
 
 $('#settingsbtn').onclick = () => {
-  $('#system').value = state.settings.system || REPORT_PROMPT;
+  $('#system').value = state.settings.system || DEFAULT_PROMPT;
   $('#settings').showModal();
 };
 $('#savesettings').onclick = () => {
   const sys = $('#system').value.trim();
-  state.settings.system = sys === REPORT_PROMPT.trim() ? '' : sys; // empty means use the default
+  state.settings.system = sys === DEFAULT_PROMPT.trim() ? '' : sys; // empty means use the default
   store.set('settings', state.settings);
   applyTheme();
   $('#settings').close();
