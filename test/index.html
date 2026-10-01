@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#171719">
+<!-- Test page: keep it out of search results until it replaces the homepage. -->
+<meta name="robots" content="noindex">
+<meta name="description" content="CHAT is an independent collection of articles, topics, and resources for curious minds.">
+<title>CHAT · Curated Hub for Articles &amp; Topics</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%2310a37f'/%3E%3Cpath d='M150 156h170a58 58 0 0 1 58 58v70a58 58 0 0 1-58 58h-74l-66 52v-52h-30a58 58 0 0 1-58-58v-70a58 58 0 0 1 58-58Z' fill='%23fff'/%3E%3C/svg%3E">
+<script>
+  // Use the same theme as the workspace (it saves its settings under "parley.settings").
+  try {
+    const t = JSON.parse(localStorage.getItem('parley.settings') || '{}').theme;
+    if (t === 'light') document.documentElement.dataset.theme = 'light';
+  } catch {}
+</script>
+<style>
+  /* ---------- tokens (shared with the workspace) ---------- */
+  :root {
+    --bg: #1b1b1e; --side: #171719; --panel: #222226; --raise: #2c2c31;
+    --ink: #ececec; --dim: #a0a0a8; --faint: #6c6c75; --line: #313137;
+    --accent: #10a37f; --accent-soft: rgba(16,163,127,.12);
+    --shadow: 0 1px 2px rgba(0,0,0,.25), 0 12px 32px -12px rgba(0,0,0,.45);
+    --serif: "Iowan Old Style", "Charter", "Source Serif Pro", Georgia, Cambria, serif;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --wrap: 1160px;
+    --gutter: clamp(20px, 4vw, 40px);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #fbfbf9; --side: #f4f4f1; --panel: #ffffff; --raise: #efefeb;
+    --ink: #1b1b1f; --dim: #5a5a63; --faint: #94949c; --line: #e4e4df;
+    --accent: #0c8a6b; --accent-soft: rgba(12,138,107,.09);
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 32px -14px rgba(0,0,0,.14);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 var(--sans);
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  }
+  a { color: inherit; text-decoration: none; }
+  svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: 0; padding: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--faint);
+  }
+  .serif { font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px;
+    border-radius: 999px; font-size: 15px; font-weight: 500; white-space: nowrap;
+    transition: background .2s, border-color .2s, color .2s, transform .2s;
+  }
+  .btn svg { width: 16px; height: 16px; transition: transform .2s; }
+  .btn-solid { background: var(--ink); color: var(--bg); }
+  .btn-line { border: 1px solid var(--line); color: var(--ink); }
+  @media (hover: hover) {
+    .btn-solid:hover { opacity: .9; }
+    .btn-line:hover { border-color: var(--faint); }
+    .btn:hover svg { transform: translateX(2px); }
+  }
+
+  /* ---------- header ---------- */
+  .site-header {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid transparent; transition: border-color .25s;
+  }
+  .site-header.scrolled { border-bottom-color: var(--line); }
+  .bar { display: flex; align-items: center; gap: 28px; height: 68px; }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand b { font-family: var(--serif); font-size: 22px; font-weight: 600; letter-spacing: .06em; }
+  .brand span { font-size: 13px; color: var(--faint); border-left: 1px solid var(--line); padding-left: 12px; }
+  .nav { display: flex; gap: 4px; margin-left: auto; }
+  .nav a { font-size: 15px; color: var(--dim); padding: 6px 12px; border-radius: 8px; transition: color .2s, background .2s; }
+  .nav a:hover, .nav a.on { color: var(--ink); }
+  .tools { display: flex; align-items: center; gap: 6px; }
+  .search-btn {
+    display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px 0 12px;
+    border: 1px solid var(--line); border-radius: 10px; color: var(--faint); font-size: 14px;
+    transition: border-color .2s, color .2s;
+  }
+  @media (hover: hover) { .search-btn:hover { border-color: var(--faint); color: var(--dim); } }
+  .search-btn svg { width: 16px; height: 16px; }
+  .search-btn kbd { font: 11px var(--sans); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; color: var(--faint); }
+  .icon-btn { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; color: var(--dim); transition: color .2s, background .2s; }
+  @media (hover: hover) { .icon-btn:hover { color: var(--ink); background: var(--raise); } }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .theme-btn .moon, :root[data-theme="light"] .theme-btn .sun { display: none; }
+  :root[data-theme="light"] .theme-btn .moon { display: block; }
+  .menu-btn { display: none; }
+  .mobile-nav { display: none; }
+
+  /* ---------- hero ---------- */
+  .hero { padding: clamp(64px, 11vw, 136px) 0 clamp(56px, 8vw, 104px); }
+  .hero-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: clamp(40px, 6vw, 88px); align-items: end; }
+  .hero h1 {
+    font-family: var(--serif); font-weight: 500; letter-spacing: -.025em;
+    font-size: clamp(44px, 7.4vw, 92px); line-height: 1.02; margin: 18px 0 26px;
+  }
+  .hero h1 em { font-style: italic; color: var(--dim); }
+  .hero .lede { font-size: clamp(17px, 1.6vw, 20px); color: var(--dim); max-width: 34ch; margin: 0 0 36px; }
+  .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .reading {
+    border-top: 1px solid var(--ink); padding-top: 18px;
+  }
+  .reading ol { list-style: none; margin: 14px 0 0; padding: 0; counter-reset: r; }
+  .reading li { counter-increment: r; border-bottom: 1px solid var(--line); }
+  .reading a { display: grid; grid-template-columns: 28px 1fr; gap: 4px 10px; padding: 16px 0; }
+  .reading a::before { content: counter(r, decimal-leading-zero); font-size: 13px; color: var(--faint); padding-top: 3px; font-variant-numeric: tabular-nums; }
+  .reading strong { font-family: var(--serif); font-weight: 500; font-size: 19px; line-height: 1.3; transition: color .2s; }
+  .reading small { grid-column: 2; font-size: 13px; color: var(--faint); }
+  .reading a:hover strong { color: var(--accent); }
+
+  /* ---------- sections ---------- */
+  section.block { padding: clamp(64px, 9vw, 112px) 0; border-top: 1px solid var(--line); }
+  .head { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: clamp(32px, 4vw, 52px); }
+  .head h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(32px, 4.2vw, 48px); line-height: 1.1; letter-spacing: -.02em; margin: 10px 0 0; }
+  .head p { margin: 12px 0 0; color: var(--dim); max-width: 46ch; }
+  .more { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--dim); white-space: nowrap; transition: color .2s; }
+  .more svg { width: 15px; height: 15px; transition: transform .2s; }
+  .more:hover { color: var(--ink); }
+  .more:hover svg { transform: translateX(2px); }
+
+  /* ---------- topics ---------- */
+  .topics { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+  .topic {
+    position: relative; display: flex; flex-direction: column; gap: 14px; min-height: 236px;
+    padding: 30px 30px 26px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    transition: background .25s;
+  }
+  .topic:hover { background: var(--panel); }
+  .topic .glyph { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; color: var(--accent); background: var(--accent-soft); }
+  .topic .glyph svg { width: 20px; height: 20px; }
+  .topic h3 { font-family: var(--serif); font-weight: 500; font-size: 26px; letter-spacing: -.01em; margin: 10px 0 0; }
+  .topic p { margin: 0; color: var(--dim); font-size: 15px; max-width: 30ch; }
+  .topic .go { margin-top: auto; display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--faint); transition: color .2s; }
+  .topic .go svg { width: 15px; height: 15px; transition: transform .2s; }
+  .topic:hover .go { color: var(--ink); }
+  .topic:hover .go svg { transform: translateX(3px); }
+
+  /* ---------- articles ---------- */
+  .articles { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(28px, 3vw, 40px) clamp(20px, 2.4vw, 32px); }
+  .card { display: flex; flex-direction: column; }
+  .cover {
+    position: relative; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--line); background: var(--panel); margin-bottom: 20px;
+  }
+  .cover svg { position: absolute; inset: 0; width: 100%; height: 100%; stroke-width: 1.2; transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+  .card:hover .cover svg { transform: scale(1.035); }
+  .cover .tag {
+    position: absolute; left: 14px; top: 14px; font-size: 12px; font-weight: 600; letter-spacing: .04em;
+    padding: 4px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); color: var(--dim);
+  }
+  .card h3 { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.22; letter-spacing: -.01em; margin: 0 0 10px; transition: color .2s; }
+  .card:hover h3 { color: var(--accent); }
+  .card p { margin: 0 0 16px; color: var(--dim); font-size: 15px; }
+  .meta { margin-top: auto; display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--faint); }
+  .meta i { width: 3px; height: 3px; border-radius: 50%; background: var(--faint); }
+  .card.lead { grid-column: span 2; display: grid; grid-template-columns: 1.25fr 1fr; gap: 32px; align-items: center; }
+  .card.lead .cover { margin: 0; aspect-ratio: 16 / 11; }
+  .card.lead h3 { font-size: clamp(28px, 3vw, 36px); }
+  .card.lead p { font-size: 17px; }
+
+  /* ---------- resources ---------- */
+  .library { display: grid; grid-template-columns: 220px 1fr; gap: clamp(28px, 5vw, 64px); }
+  .shelf { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 96px; align-self: start; }
+  .shelf button {
+    display: flex; justify-content: space-between; align-items: center; text-align: left;
+    padding: 10px 14px; border-radius: 10px; color: var(--dim); font-size: 15px; transition: background .2s, color .2s;
+  }
+  .shelf button small { font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .shelf button:hover { color: var(--ink); }
+  .shelf button[aria-selected="true"] { background: var(--raise); color: var(--ink); }
+  .shelf-intro { margin: 0 0 6px; color: var(--dim); font-size: 15px; }
+  .items { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .items li { border-bottom: 1px solid var(--line); }
+  .items a { display: grid; grid-template-columns: 1fr auto; gap: 4px 24px; align-items: center; padding: 20px 4px; }
+  .items strong { font-family: var(--serif); font-weight: 500; font-size: 20px; transition: color .2s; }
+  .items span { grid-column: 1; color: var(--dim); font-size: 15px; }
+  .items em { grid-row: 1 / span 2; grid-column: 2; font-style: normal; font-size: 13px; color: var(--faint); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .items em svg { width: 14px; height: 14px; }
+  .items a:hover strong { color: var(--accent); }
+  .pane { animation: fade .35s ease both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } }
+
+  /* ---------- about ---------- */
+  .about { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(36px, 6vw, 88px); }
+  .about blockquote {
+    margin: 18px 0 0; font-family: var(--serif); font-size: clamp(24px, 2.6vw, 32px); line-height: 1.32; letter-spacing: -.01em;
+  }
+  .about .body p { color: var(--dim); margin: 0 0 18px; }
+  .pillars { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 30px; border-top: 1px solid var(--line); }
+  .pillar { padding: 22px 22px 22px 0; border-bottom: 1px solid var(--line); }
+  .pillar:nth-child(odd) { border-right: 1px solid var(--line); }
+  .pillar:nth-child(even) { padding-left: 22px; }
+  .pillar h4 { margin: 0 0 6px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .pillar h4::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .pillar p { margin: 0; font-size: 14.5px; color: var(--dim); }
+
+  /* ---------- footer ---------- */
+  .site-footer { border-top: 1px solid var(--line); background: var(--side); padding: clamp(56px, 7vw, 80px) 0 32px; }
+  .foot { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.4fr; gap: 40px; }
+  .foot .brand { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .foot .brand span { border: 0; padding: 0; }
+  .foot .brand p { margin: 10px 0 0; font-size: 14px; color: var(--dim); max-width: 30ch; }
+  .foot h5 { margin: 0 0 14px; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .foot ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .foot ul a { color: var(--dim); font-size: 15px; transition: color .2s; }
+  .foot ul a:hover { color: var(--ink); }
+  .workspace { border: 1px solid var(--line); border-radius: 14px; padding: 22px; background: var(--panel); }
+  .workspace p { margin: 0 0 18px; font-size: 14.5px; color: var(--dim); }
+  .workspace .btn { height: 40px; padding: 0 16px; font-size: 14px; }
+  .legal { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; color: var(--faint); }
+
+  /* ---------- search ---------- */
+  dialog.search {
+    width: min(620px, calc(100vw - 24px)); margin: 12vh auto auto; padding: 0;
+    border: 1px solid var(--line); border-radius: 16px; background: var(--panel); color: var(--ink); box-shadow: var(--shadow);
+  }
+  dialog.search::backdrop { background: rgba(0,0,0,.42); backdrop-filter: blur(2px); }
+  .sfield { display: flex; align-items: center; gap: 12px; padding: 0 18px; border-bottom: 1px solid var(--line); color: var(--faint); }
+  .sfield input { flex: 1; height: 58px; border: 0; background: none; outline: none; font-size: 17px; color: var(--ink); }
+  .sfield kbd { font: 11px var(--sans); border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; }
+  .sresults { max-height: min(420px, 55vh); overflow-y: auto; padding: 8px; }
+  .sresults a { display: flex; justify-content: space-between; gap: 16px; padding: 11px 12px; border-radius: 10px; }
+  .sresults a span { font-size: 15px; }
+  .sresults a small { color: var(--faint); font-size: 12px; white-space: nowrap; }
+  .sresults a.focus, .sresults a:hover { background: var(--raise); }
+  .sresults p { margin: 0; padding: 20px 12px; color: var(--faint); font-size: 15px; }
+
+  /* ---------- motion ---------- */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
+  /* ---------- tablet ---------- */
+  @media (max-width: 1024px) {
+    .brand span { display: none; }
+    .search-btn .label, .search-btn kbd { display: none; }
+    .search-btn { width: 38px; padding: 0; justify-content: center; border-color: transparent; color: var(--dim); }
+    .hero-grid { grid-template-columns: 1fr; }
+    .reading { max-width: 560px; }
+    .topics { grid-template-columns: repeat(2, 1fr); }
+    .articles { grid-template-columns: repeat(2, 1fr); }
+    .card.lead { grid-column: span 2; }
+    .foot { grid-template-columns: 1fr 1fr; }
+    .foot .brand, .workspace { grid-column: span 2; }
+  }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 720px) {
+    .bar { height: 60px; gap: 12px; }
+    .nav { display: none; }
+    .tools { margin-left: auto; }
+    .menu-btn { display: grid; }
+    .mobile-nav {
+      display: block; overflow: hidden; max-height: 0; transition: max-height .3s ease;
+      border-top: 1px solid transparent;
+    }
+    .mobile-nav.open { max-height: 320px; border-top-color: var(--line); }
+    .mobile-nav a { display: block; padding: 14px var(--gutter); font-size: 17px; border-bottom: 1px solid var(--line); }
+    .mobile-nav a:last-child { border-bottom: 0; }
+    .site-header:has(.mobile-nav.open) { background: var(--bg); border-bottom-color: var(--line); }
+    .head { flex-direction: column; align-items: flex-start; }
+    .topics { grid-template-columns: 1fr; }
+    .topic { min-height: 0; padding: 24px 22px; }
+    .articles { grid-template-columns: 1fr; }
+    .card.lead { grid-column: auto; grid-template-columns: 1fr; gap: 20px; }
+    .library { grid-template-columns: 1fr; gap: 20px; }
+    .shelf { position: static; flex-direction: row; overflow-x: auto; gap: 6px; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter) 4px; scrollbar-width: none; }
+    .shelf::-webkit-scrollbar { display: none; }
+    .shelf button { flex: none; border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; gap: 8px; }
+    .shelf button[aria-selected="true"] { border-color: var(--ink); }
+    .items a { grid-template-columns: 1fr; }
+    .items em { grid-row: auto; grid-column: 1; margin-top: 4px; }
+    .about { grid-template-columns: 1fr; }
+    .pillars { grid-template-columns: 1fr; }
+    .pillar, .pillar:nth-child(even) { padding: 18px 0; border-right: 0 !important; }
+    .foot { grid-template-columns: 1fr 1fr; gap: 32px 20px; }
+    .legal { flex-direction: column; margin-top: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header" id="top">
+  <div class="wrap bar">
+    <a class="brand" href="#top" aria-label="CHAT home">
+      <b>CHAT</b><span>Curated Hub for Articles &amp; Topics</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="#topics">Topics</a>
+      <a href="#articles">Articles</a>
+      <a href="#resources">Resources</a>
+      <a href="#about">About</a>
+    </nav>
+    <div class="tools">
+      <button class="search-btn" id="openSearch" aria-label="Search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span class="label">Search</span><kbd>⌘K</kbd>
+      </button>
+      <button class="icon-btn theme-btn" id="theme" aria-label="Switch theme" title="Switch theme">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+      <button class="icon-btn menu-btn" id="menu" aria-label="Menu" aria-expanded="false" aria-controls="mobileNav">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile">
+    <a href="#topics">Topics</a>
+    <a href="#articles">Articles</a>
+    <a href="#resources">Resources</a>
+    <a href="#about">About</a>
+  </nav>
+</header>
+
+<main>
+  <!-- ---------- hero ---------- -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="reveal">
+        <div class="eyebrow">Curated Hub for Articles &amp; Topics</div>
+        <h1>Ideas worth <em>exploring.</em></h1>
+        <p class="lede">A curated collection of articles, topics, and resources for curious minds.</p>
+        <div class="ctas">
+          <a class="btn btn-solid" href="#topics">Explore Topics
+            <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+          <a class="btn btn-line" href="#articles">Browse Articles</a>
+        </div>
+      </div>
+      <aside class="reading reveal" aria-label="Featured reading">
+        <div class="eyebrow">Featured reading</div>
+        <ol>
+          <li><a href="#articles"><strong>Understanding Large Language Models</strong><small>Technology · 9 min read</small></a></li>
+          <li><a href="#articles"><strong>Why Good Interfaces Feel Simple</strong><small>Design · 7 min read</small></a></li>
+          <li><a href="#articles"><strong>The Economics of Attention</strong><small>Business · 11 min read</small></a></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ---------- topics ---------- -->
+  <section class="block" id="topics">
+    <div class="wrap">
+      <div class="head reveal">
+        <div>
+          <div class="eyebrow">Topics</div>
+          <h2>Start with a subject.</h2>
+          <p>Six areas we return to again and again, each with its own reading list and resources.</p>
+        </div>
+      </div>
+      <div class="topics reveal">
+        <a class="topic" href="#articles" data-search="Technology" data-kind="Topic">
+          <span class="glyph"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg></span>
+          <h3>Technology</h3>
+          <p>AI, computing, software, and emerging technology.</p>
+          <span class="go">Explore <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+        </a>
+        <a class="topic" href="#articles" data-search="Business" data-kind="Topic">
+          <span class="glyph"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16v-5M11 16V8M16 16v-3M20 4l-6 6-3-3-5 5"/></svg></span>
+          <h3>Business</h3>
+          <p>Entrepreneurship, marketing, economics, and strategy.</p>
+          <span class="go">Explore <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+        </a>
+        <a class="topic" href="#articles" data-search="Science" data-kind="Topic">
+          <span class="glyph"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7 15h10"/></svg></span>
+          <h3>Science</h3>
+          <p>Interesting developments across science and research.</p>
+          <span class="go">Explore <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+        </a>
+        <a class="topic" href="#articles" data-search="Design" data-kind="Topic">
+          <span class="glyph"><svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 22a10 10 0 1 1 10-10c0 3-2.5 4-4.5 4H16a2 2 0 0 0-1.5 3.3A2 2 0 0 1 12 22Z"/></svg></span>
+          <h3>Design</h3>
+          <p>Design, creativity, interfaces, and visual culture.</p>
+          <span class="go">Explore <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+        </a>
+        <a class="topic" href="#articles" data-search="Culture" data-kind="Topic">
+          <span class="glyph"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-6 10 6Z"/></svg></span>
+          <h3>Culture</h3>
+          <p>Ideas, history, media, and society.</p>
+          <span class="go">Explore <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+        </a>
+        <a class="topic" href="#articles" data-search="Learning" data-kind="Topic">
+          <span class="glyph"><svg viewBox="0 0 24 24"><path d="M2 7l10-4 10 4-10 4Z"/><path d="M6 9v5c0 1.7 2.7 3 6 3s6-1.3 6-3V9M22 7v6"/></svg></span>
+          <h3>Learning</h3>
+          <p>Study techniques, education, and useful resources.</p>
+          <span class="go">Explore <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- articles ---------- -->
+  <section class="block" id="articles">
+    <div class="wrap">
+      <div class="head reveal">
+        <div>
+          <div class="eyebrow">Latest articles</div>
+          <h2>Recently published.</h2>
+        </div>
+        <a class="more" href="#topics">Browse by topic <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+      </div>
+
+      <div class="articles">
+        <article class="card lead reveal" data-search="Understanding Large Language Models" data-kind="Article">
+          <div class="cover" aria-hidden="true">
+            <svg viewBox="0 0 400 275" preserveAspectRatio="xMidYMid slice">
+              <g stroke="var(--line)">
+                <path d="M0 55h400M0 110h400M0 165h400M0 220h400M80 0v275M160 0v275M240 0v275M320 0v275"/>
+              </g>
+              <g stroke="var(--faint)">
+                <circle cx="80" cy="110" r="5"/><circle cx="80" cy="165" r="5"/>
+                <circle cx="160" cy="55" r="5"/><circle cx="160" cy="137" r="5"/><circle cx="160" cy="220" r="5"/>
+                <circle cx="240" cy="82" r="5"/><circle cx="240" cy="192" r="5"/>
+                <path d="M85 110l70-55M85 110l70 27M85 165l70-28M85 165l70 55M165 55l70 27M165 137l70-55M165 137l70 55M165 220l70-28"/>
+              </g>
+              <g stroke="var(--accent)" stroke-width="1.8">
+                <circle cx="320" cy="137" r="7"/><path d="M245 82l68 50M245 192l68-50"/>
+              </g>
+            </svg>
+            <span class="tag">Technology</span>
+          </div>
+          <div>
+            <h3>Understanding Large Language Models</h3>
+            <p>A beginner-friendly explanation of how modern language models work.</p>
+            <div class="meta"><span>Explainer</span><i></i><span>9 min read</span></div>
+          </div>
+        </article>
+
+        <article class="card reveal" data-search="Why Good Interfaces Feel Simple" data-kind="Article">
+          <div class="cover" aria-hidden="true">
+            <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+              <rect x="90" y="60" width="220" height="180" rx="14" stroke="var(--faint)"/>
+              <path d="M90 92h220" stroke="var(--line)"/>
+              <circle cx="108" cy="76" r="4" stroke="var(--line)"/><circle cx="122" cy="76" r="4" stroke="var(--line)"/>
+              <rect x="114" y="116" width="96" height="10" rx="5" stroke="var(--faint)"/>
+              <rect x="114" y="140" width="172" height="8" rx="4" stroke="var(--line)"/>
+              <rect x="114" y="158" width="140" height="8" rx="4" stroke="var(--line)"/>
+              <rect x="114" y="190" width="70" height="26" rx="13" stroke="var(--accent)" stroke-width="1.8"/>
+            </svg>
+            <span class="tag">Design</span>
+          </div>
+          <h3>Why Good Interfaces Feel Simple</h3>
+          <p>Exploring the principles behind intuitive digital products.</p>
+          <div class="meta"><span>Essay</span><i></i><span>7 min read</span></div>
+        </article>
+
+        <article class="card reveal" data-search="The Economics of Attention" data-kind="Article">
+          <div class="cover" aria-hidden="true">
+            <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+              <g stroke="var(--line)"><circle cx="200" cy="150" r="110"/><circle cx="200" cy="150" r="80"/></g>
+              <g stroke="var(--faint)"><circle cx="200" cy="150" r="50"/></g>
+              <circle cx="200" cy="150" r="20" stroke="var(--accent)" stroke-width="1.8"/>
+              <path d="M200 20v40M200 240v40M70 150h40M290 150h40" stroke="var(--line)"/>
+            </svg>
+            <span class="tag">Business</span>
+          </div>
+          <h3>The Economics of Attention</h3>
+          <p>How attention became one of the most valuable resources online.</p>
+          <div class="meta"><span>Analysis</span><i></i><span>11 min read</span></div>
+        </article>
+
+        <article class="card reveal" data-search="How to Actually Remember What You Read" data-kind="Article">
+          <div class="cover" aria-hidden="true">
+            <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+              <path d="M60 230C120 230 120 90 200 90s80 140 140 140" stroke="var(--line)"/>
+              <path d="M60 230c40 0 50-60 90-60s40 40 70 40 40-30 60-30 30 20 60 20" stroke="var(--faint)"/>
+              <g stroke="var(--accent)" stroke-width="1.8"><circle cx="150" cy="170" r="5"/><circle cx="220" cy="210" r="5"/><circle cx="280" cy="180" r="5"/></g>
+              <path d="M60 250h280" stroke="var(--line)"/>
+            </svg>
+            <span class="tag">Learning</span>
+          </div>
+          <h3>How to Actually Remember What You Read</h3>
+          <p>Simple, evidence-based habits that help ideas stick long after the last page.</p>
+          <div class="meta"><span>Guide</span><i></i><span>6 min read</span></div>
+        </article>
+
+        <article class="card reveal" data-search="What Makes Research Reproducible" data-kind="Article">
+          <div class="cover" aria-hidden="true">
+            <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+              <g stroke="var(--line)"><rect x="80" y="70" width="110" height="150" rx="8"/><rect x="210" y="70" width="110" height="150" rx="8"/></g>
+              <g stroke="var(--faint)"><path d="M100 100h70M100 120h50M100 140h60M230 100h70M230 120h50M230 140h60"/></g>
+              <g stroke="var(--accent)" stroke-width="1.8"><path d="M100 180l14 14 26-28M230 180l14 14 26-28"/></g>
+            </svg>
+            <span class="tag">Science</span>
+          </div>
+          <h3>What Makes Research Reproducible</h3>
+          <p>Why repeating an experiment matters, and what makes it so hard to do well.</p>
+          <div class="meta"><span>Explainer</span><i></i><span>8 min read</span></div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- resources ---------- -->
+  <section class="block" id="resources">
+    <div class="wrap">
+      <div class="head reveal">
+        <div>
+          <div class="eyebrow">Resources</div>
+          <h2>A small, well-kept library.</h2>
+          <p>Hand-picked places to keep learning. Short lists on purpose, so everything here is worth your time.</p>
+        </div>
+      </div>
+      <div class="library reveal">
+        <div class="shelf" role="tablist" aria-label="Resource categories" id="shelf"></div>
+        <div id="shelfPane" role="tabpanel"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- about ---------- -->
+  <section class="block" id="about">
+    <div class="wrap about">
+      <div class="reveal">
+        <div class="eyebrow">About CHAT</div>
+        <blockquote>CHAT is an independent collection of articles, resources, and ideas covering technology, business, science, design, culture, and learning.</blockquote>
+      </div>
+      <div class="body reveal">
+        <p>We read widely so you can read well. Every article and resource here is chosen because it explains something clearly, holds up over time, or opens a door to a new subject. No noise, no endless feeds.</p>
+        <p>CHAT is built for people who like to understand how things work, whether that means a new technology, a business idea, or a piece of history.</p>
+        <div class="pillars">
+          <div class="pillar"><h4>Curiosity</h4><p>Following good questions wherever they lead.</p></div>
+          <div class="pillar"><h4>Learning</h4><p>Clear explanations that build real understanding.</p></div>
+          <div class="pillar"><h4>Accessibility</h4><p>Plain language, free to read, open to everyone.</p></div>
+          <div class="pillar"><h4>Exploration</h4><p>Connections across subjects you didn't expect.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ---------- footer ---------- -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot">
+      <div class="brand">
+        <b>CHAT</b>
+        <span>Curated Hub for Articles &amp; Topics</span>
+        <p>An independent collection of articles, topics, and resources for curious minds.</p>
+      </div>
+      <div>
+        <h5>Explore</h5>
+        <ul>
+          <li><a href="#topics">Topics</a></li>
+          <li><a href="#articles">Articles</a></li>
+          <li><a href="#resources">Resources</a></li>
+          <li><a href="#about">About</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#privacy">Privacy</a></li>
+          <li><a href="#terms">Terms</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div class="workspace">
+        <h5>Workspace</h5>
+        <p>Draft, summarize, and organize your notes in your private workspace.</p>
+        <!-- The existing chat app lives at the site root. -->
+        <a class="btn btn-solid" href="../">Open Workspace
+          <svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+      </div>
+    </div>
+    <div class="legal">
+      <span>© <span id="year"></span> CHAT. All rights reserved.</span>
+      <span>Curated Hub for Articles &amp; Topics</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ---------- search ---------- -->
+<dialog class="search" id="search" aria-label="Search">
+  <div class="sfield">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Search topics, articles, and resources" autocomplete="off" aria-label="Search">
+    <kbd>Esc</kbd>
+  </div>
+  <div class="sresults" id="results"></div>
+</dialog>
+
+<script>
+'use strict';
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const arrow = '<svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+
+// ---------- resources (static for now) ----------
+const LIBRARY = {
+  Websites: {
+    intro: 'Reliable places to look things up and go deeper.',
+    items: [
+      ['Our World in Data', 'Research and charts on the world’s biggest problems.', 'ourworldindata.org', 'https://ourworldindata.org'],
+      ['MDN Web Docs', 'The reference for how the web works, from HTML to JavaScript.', 'developer.mozilla.org', 'https://developer.mozilla.org'],
+      ['Wikipedia', 'The free encyclopedia, and a good first stop on almost anything.', 'wikipedia.org', 'https://www.wikipedia.org'],
+    ],
+  },
+  Books: {
+    intro: 'Books that change how you think about a subject.',
+    items: [
+      ['Thinking, Fast and Slow', 'Daniel Kahneman on the two systems that drive how we think.', 'Psychology', 'https://en.wikipedia.org/wiki/Thinking,_Fast_and_Slow'],
+      ['The Design of Everyday Things', 'Don Norman’s classic on why some things are easy to use.', 'Design', 'https://en.wikipedia.org/wiki/The_Design_of_Everyday_Things'],
+      ['Make It Stick', 'Brown, Roediger, and McDaniel on the science of learning.', 'Learning', 'https://en.wikipedia.org/wiki/Make_It_Stick'],
+    ],
+  },
+  Tools: {
+    intro: 'Simple tools for reading, studying, and organizing ideas.',
+    items: [
+      ['Zotero', 'Free reference manager for collecting and citing sources.', 'zotero.org', 'https://www.zotero.org'],
+      ['Anki', 'Flashcards with spaced repetition, for remembering what you learn.', 'apps.ankiweb.net', 'https://apps.ankiweb.net'],
+      ['Obsidian', 'A private notebook for linking notes and ideas together.', 'obsidian.md', 'https://obsidian.md'],
+    ],
+  },
+  Courses: {
+    intro: 'Free, high-quality courses from respected teachers.',
+    items: [
+      ['CS50', 'Harvard’s introduction to computer science, open to everyone.', 'cs50.harvard.edu', 'https://cs50.harvard.edu'],
+      ['MIT OpenCourseWare', 'Materials from thousands of MIT courses, free online.', 'ocw.mit.edu', 'https://ocw.mit.edu'],
+      ['Khan Academy', 'Clear lessons in math, science, economics, and more.', 'khanacademy.org', 'https://www.khanacademy.org'],
+    ],
+  },
+  Research: {
+    intro: 'Where to find papers and primary sources.',
+    items: [
+      ['arXiv', 'Open-access preprints in physics, math, computer science, and more.', 'arxiv.org', 'https://arxiv.org'],
+      ['Google Scholar', 'Search across scholarly articles, theses, and books.', 'scholar.google.com', 'https://scholar.google.com'],
+      ['PubMed', 'Biomedical and life sciences literature.', 'pubmed.ncbi.nlm.nih.gov', 'https://pubmed.ncbi.nlm.nih.gov'],
+    ],
+  },
+  Reference: {
+    intro: 'Trusted references for definitions, facts, and big ideas.',
+    items: [
+      ['Stanford Encyclopedia of Philosophy', 'Peer-reviewed entries on ideas and thinkers.', 'plato.stanford.edu', 'https://plato.stanford.edu'],
+      ['Merriam-Webster', 'Definitions, usage notes, and word histories.', 'merriam-webster.com', 'https://www.merriam-webster.com'],
+      ['Wolfram|Alpha', 'Answers to math, science, and data questions.', 'wolframalpha.com', 'https://www.wolframalpha.com'],
+    ],
+  },
+};
+
+const shelf = $('#shelf');
+const pane = $('#shelfPane');
+shelf.innerHTML = Object.entries(LIBRARY).map(([name, c], i) =>
+  `<button role="tab" id="tab-${name}" aria-controls="shelfPane" aria-selected="${i === 0}" data-name="${name}">${name}<small>${String(c.items.length).padStart(2, '0')}</small></button>`).join('');
+
+function showShelf(name) {
+  const c = LIBRARY[name];
+  $$('button', shelf).forEach((b) => b.setAttribute('aria-selected', String(b.dataset.name === name)));
+  pane.setAttribute('aria-labelledby', 'tab-' + name);
+  pane.innerHTML = `<div class="pane"><p class="shelf-intro">${esc(c.intro)}</p><ul class="items">${c.items.map(([t, d, src, url]) =>
+    `<li><a href="${esc(url)}" target="_blank" rel="noopener noreferrer"><strong>${esc(t)}</strong><span>${esc(d)}</span><em>${esc(src)} ${arrow}</em></a></li>`).join('')}</ul></div>`;
+}
+shelf.onclick = (e) => { const b = e.target.closest('button'); if (b) showShelf(b.dataset.name); };
+shelf.onkeydown = (e) => {
+  if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
+  e.preventDefault();
+  const tabs = $$('button', shelf);
+  const i = tabs.indexOf(document.activeElement);
+  const next = tabs[(i + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : tabs.length - 1)) % tabs.length];
+  next.focus();
+  showShelf(next.dataset.name);
+};
+showShelf('Websites');
+
+// ---------- theme (shared with the workspace) ----------
+$('#theme').onclick = () => {
+  const light = document.documentElement.dataset.theme !== 'light';
+  if (light) document.documentElement.dataset.theme = 'light';
+  else delete document.documentElement.dataset.theme;
+  $('meta[name="theme-color"]').content = light ? '#fbfbf9' : '#171719';
+  try {
+    const s = JSON.parse(localStorage.getItem('parley.settings') || '{}');
+    s.theme = light ? 'light' : 'dark';
+    localStorage.setItem('parley.settings', JSON.stringify(s));
+  } catch {}
+};
+if (document.documentElement.dataset.theme === 'light') $('meta[name="theme-color"]').content = '#fbfbf9';
+
+// ---------- header ----------
+const header = $('.site-header');
+const onScroll = () => header.classList.toggle('scrolled', scrollY > 8);
+addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+const menu = $('#menu');
+const mobileNav = $('#mobileNav');
+function setMenu(open) {
+  mobileNav.classList.toggle('open', open);
+  menu.setAttribute('aria-expanded', String(open));
+}
+menu.onclick = () => setMenu(!mobileNav.classList.contains('open'));
+mobileNav.onclick = (e) => { if (e.target.closest('a')) setMenu(false); };
+
+// Highlight the nav link for the section in view.
+const links = $$('.nav a');
+const spy = new IntersectionObserver((entries) => {
+  for (const en of entries) {
+    if (en.isIntersecting) links.forEach((a) => a.classList.toggle('on', a.getAttribute('href') === '#' + en.target.id));
+  }
+}, { rootMargin: '-45% 0px -50% 0px' });
+['topics', 'articles', 'resources', 'about'].forEach((id) => spy.observe(document.getElementById(id)));
+
+// ---------- reveal on scroll ----------
+const io = new IntersectionObserver((entries) => {
+  for (const en of entries) if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+}, { rootMargin: '0px 0px -8% 0px' });
+$$('.reveal').forEach((el) => io.observe(el));
+
+// ---------- search ----------
+const dlg = $('#search');
+const q = $('#q');
+const results = $('#results');
+const index = [
+  ...$$('[data-search]').map((el) => ({ title: el.dataset.search, kind: el.dataset.kind, el })),
+  ...Object.entries(LIBRARY).flatMap(([cat, c]) => c.items.map(([t, d]) => ({ title: t, kind: cat, desc: d, cat }))),
+];
+
+function renderResults() {
+  const term = q.value.trim().toLowerCase();
+  const hits = index.filter((x) => !term || (x.title + ' ' + x.kind + ' ' + (x.desc || '')).toLowerCase().includes(term)).slice(0, 12);
+  results.innerHTML = hits.length
+    ? hits.map((x, i) => `<a href="#" data-i="${index.indexOf(x)}"${i === 0 ? ' class="focus"' : ''}><span>${esc(x.title)}</span><small>${esc(x.kind)}</small></a>`).join('')
+    : `<p>No results for “${esc(q.value)}”.</p>`;
+}
+
+function go(item) {
+  dlg.close();
+  if (item.cat) {
+    showShelf(item.cat);
+    document.getElementById('resources').scrollIntoView();
+  } else {
+    item.el.scrollIntoView({ block: 'center' });
+  }
+}
+
+function openSearch() {
+  setMenu(false);
+  q.value = '';
+  renderResults();
+  dlg.showModal();
+  q.focus();
+}
+
+$('#openSearch').onclick = openSearch;
+q.oninput = renderResults;
+results.onclick = (e) => {
+  const a = e.target.closest('a');
+  if (!a) return;
+  e.preventDefault();
+  go(index[+a.dataset.i]);
+};
+q.onkeydown = (e) => {
+  const rows = $$('a', results);
+  let i = rows.findIndex((r) => r.classList.contains('focus'));
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    rows[i]?.classList.remove('focus');
+    i = (i + (e.key === 'ArrowDown' ? 1 : rows.length - 1)) % rows.length;
+    rows[i]?.classList.add('focus');
+    rows[i]?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && rows[i]) {
+    e.preventDefault();
+    go(index[+rows[i].dataset.i]);
+  }
+};
+dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); }
+  else if (e.key === '/' && !dlg.open && !/input|textarea/i.test(document.activeElement.tagName)) { e.preventDefault(); openSearch(); }
+});
+
+$('#year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
