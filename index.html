@@ -74,12 +74,28 @@
   .tabs button { flex: 1; justify-content: center; padding: 6px; font-size: 14px; color: var(--dim); border-radius: 8px; }
   .tabs button.on { background: var(--side); color: var(--ink); font-weight: 600; }
   #fikbox { padding: 6px 6px 10px; font-size: 13px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  #fikmore { margin-top: 8px; } #fikmore summary { cursor: pointer; font-size: 12px; }
   #fikbox .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   #fikbox .btns button { padding: 5px 10px; font-size: 13px; border: 1px solid var(--line); }
   #fikbox .btns button:hover { background: var(--raise); }
-  #fikbar { height: 3px; background: var(--raise); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  #fikbar { height: 4px; background: var(--raise); border-radius: 2px; margin-top: 8px; overflow: hidden; }
   #fikbar i { display: block; height: 100%; width: 0; background: var(--accent); }
-  .sources { margin-top: 8px; font-size: 12.5px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .sources { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; color: var(--faint); }
+  .sources .src { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 12px 4px 6px; color: var(--dim); text-decoration: none; }
+  .sources a.src:hover { border-color: var(--accent); color: var(--ink); }
+  .sources .src span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+  .cite { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 600; vertical-align: 2px; margin: 0 1px; line-height: 1; }
+  .searching { color: var(--dim); display: flex; align-items: center; gap: 10px; }
+  .searching::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fikcard { background: var(--raise); border-radius: 14px; padding: 12px 14px; }
+  .fikhead { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  #fikdot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; }
+  #fikdot.ok { background: #3ecf8e; box-shadow: 0 0 0 3px rgba(62,207,142,.18); }
+  #fikdot.load { background: #e8b339; animation: pulse 1s infinite; }
+  #fikdot.bad { background: var(--danger); }
+  #fikstatus { margin-top: 4px; font-size: 13px; }
+  #fikretry { margin-top: 8px; border: 1px solid var(--line); padding: 5px 12px; font-size: 13px; }
   #main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
   #top { display: flex; align-items: center; gap: 4px; padding: 8px 10px 4px; }
   .brand { font-size: 17px; font-weight: 600; padding: 6px 10px; letter-spacing: -.01em; }
@@ -88,7 +104,15 @@
   :root[data-theme="light"] #themebtn .moon { display: block; }
   #scroller { flex: 1; overflow-y: auto; }
   #welcome { height: 100%; display: grid; place-items: center; text-align: center; padding: 20px; }
-  #welcome h2 { font-size: 28px; font-weight: 600; margin: 0; }
+  #welcome h2 { font-size: 30px; font-weight: 650; margin: 0 0 8px; letter-spacing: -.02em; }
+  #welcome p { margin: 0 auto 22px; max-width: 440px; }
+  .wcard { max-width: 640px; }
+  .wlogo { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, var(--accent), #0b7a60); display: grid; place-items: center; margin: 0 auto 18px; box-shadow: 0 8px 24px rgba(16,163,127,.28); }
+  .wlogo svg { stroke: #fff; width: 26px; height: 26px; }
+  #chips { display: flex; flex-direction: column; gap: 8px; max-width: 520px; margin: 0 auto; }
+  #chips button { justify-content: flex-start; text-align: left; border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 11px 16px; font-size: 14.5px; color: var(--ink); line-height: 1.4; transition: border-color .15s, transform .15s; }
+  #chips button:hover { border-color: var(--accent); transform: translateY(-1px); }
+  #chips button::before { content: "→"; color: var(--accent); margin-right: 2px; }
   #thread { max-width: 780px; margin: 0 auto; padding: 8px 16px 24px; }
 
   .msg { margin-bottom: 22px; }
@@ -177,14 +201,15 @@
     <svg class="logo" viewBox="0 0 512 512" style="stroke:none"><rect width="512" height="512" rx="112" fill="#10a37f"/><path d="M150 156h170a58 58 0 0 1 58 58v70a58 58 0 0 1-58 58h-74l-66 52v-52h-30a58 58 0 0 1-58-58v-70a58 58 0 0 1 58-58Z" fill="#fff"/></svg>
     <div id="gate-unlock" hidden>
       <h1>Welcome to chat0</h1>
-      <p class="muted">Enter the password to start chatting.</p>
-      <input type="password" id="gatepass" placeholder="Password" autocomplete="current-password">
+      <p class="muted">Enter your two passwords to start.</p>
+      <input type="password" id="gatepass" placeholder="chat0 password" autocomplete="current-password">
     </div>
     <div id="gate-new" hidden>
       <h1>Paste your key</h1>
       <p class="muted">Get an OpenRouter key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>. It stays in this browser.</p>
       <input type="password" id="gatekey" placeholder="sk-or-v1-…" autocomplete="off" spellcheck="false">
     </div>
+    <input type="password" id="gatefik" placeholder="Fikrat password" autocomplete="off" style="margin-top:8px">
     <p class="err" id="gateerr"></p>
     <button class="primary" type="submit" id="gatebtn">Continue</button>
   </form>
@@ -199,11 +224,16 @@
     </button>
     <input id="search" type="search" placeholder="Search chats" autocomplete="off">
     <div id="fikbox" hidden>
-      <div id="fikstatus" class="muted"></div>
-      <div id="fikbar"><i></i></div>
-      <input type="password" id="fikpass" placeholder="Passphrase (online files)" autocomplete="off" style="margin-top:8px;padding:6px 10px;font-size:13px">
-      <div class="btns"><button id="fikonline">Load online</button><button id="fikpick">Choose folder</button><button id="fikre" hidden>Reload folder</button></div>
-      <input type="file" id="fikdir" webkitdirectory multiple hidden>
+      <div class="fikcard">
+        <div class="fikhead"><span id="fikdot"></span><b>Fikrat videos</b></div>
+        <div id="fikstatus" class="muted"></div>
+        <div id="fikbar"><i></i></div>
+        <button id="fikretry" hidden>Try again</button>
+      </div>
+      <details id="fikmore"><summary class="muted">Use my own files instead</summary>
+        <div class="btns"><button id="fikpick">Choose folder</button><button id="fikre" hidden>Reload folder</button></div>
+        <input type="file" id="fikdir" webkitdirectory multiple hidden>
+      </details>
     </div>
     <nav id="list"></nav>
 
@@ -219,7 +249,7 @@
   <main id="main">
     <header id="top">
       <button class="icon" id="toggleside" title="Sidebar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
-      <div class="brand">chat0</div>
+      <div class="brand" id="brand">chat0</div>
       <div class="grow"></div>
       <button class="icon mobile-only" id="newchat2" title="New chat"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
       <button class="icon" id="themebtn" title="Switch theme" aria-label="Switch theme">
@@ -229,7 +259,12 @@
     </header>
 
     <div id="scroller">
-      <div id="welcome"><h2>Ready when you are.</h2></div>
+      <div id="welcome"><div class="wcard">
+        <div class="wlogo" id="wlogo" hidden><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+        <h2 id="wtitle">Ready when you are.</h2>
+        <p id="wsub" class="muted" hidden></p>
+        <div id="chips" hidden></div>
+      </div></div>
       <div id="thread"></div>
     </div>
 
@@ -245,7 +280,7 @@
       </div>
       <input type="file" id="file" multiple hidden accept="image/*,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css">
     </form>
-    <p class="fine">AI can make mistakes. Check important info.</p>
+    <p class="fine" id="fine">AI can make mistakes. Check important info.</p>
   </main>
 </div>
 
@@ -254,7 +289,7 @@
 <dialog id="settings">
   <div class="dhead"><h3>Settings</h3><button class="icon" data-close>✕</button></div>
   <div class="dbody">
-    <label>Fikrat model (OpenRouter id)<input id="fikmodel" placeholder="deepseek/deepseek-v4-flash" autocomplete="off" spellcheck="false"></label>
+    <details style="margin-top:10px"><summary class="muted small" style="cursor:pointer">Advanced</summary><label>Fikrat model (OpenRouter id)<input id="fikmodel" placeholder="deepseek/deepseek-v4-flash" autocomplete="off" spellcheck="false"></label></details>
     <label>Instructions (General chats)<textarea id="system" rows="9" placeholder="How the assistant should answer"></textarea></label>
     <button class="primary" id="savesettings" style="width:100%">Save</button>
     <p class="muted small">Chats are saved in this browser only.</p>
@@ -318,7 +353,7 @@ const state = {
   chat: null,        // the open chat
   files: [],         // attachments waiting to be sent
   web: false,
-  project: store.get('project', 'general'), // 'general' or 'fikrat'
+  project: store.get('project', 'fikrat'), // 'general' or 'fikrat'
   controller: null,
 };
 
@@ -379,6 +414,11 @@ $('#gateform').onsubmit = async (e) => {
       key = $('#gatekey').value.trim();
       if (!key.startsWith('sk-')) throw new Error("That doesn't look like an OpenRouter key.");
     }
+    const fikpass = $('#gatefik').value;
+    if (!fikpass) throw new Error('Enter the Fikrat password too.');
+    $('#gatebtn').textContent = 'Unlocking…';
+    fik.items = await fetchBundle(fikpass); // checks the Fikrat password now, so the app opens ready
+    session.set('fikpass', fikpass);
     state.key = key;
     session.set('key', key);
     session.set('lock', LOCKED); // if the site key changes, the password is asked for again
@@ -387,6 +427,7 @@ $('#gateform').onsubmit = async (e) => {
     $('#gateerr').textContent = err.message;
   } finally {
     $('#gatebtn').disabled = false;
+    $('#gatebtn').textContent = 'Continue';
   }
 };
 
@@ -577,6 +618,9 @@ function renderThread() {
   msgs.forEach((m, i) => $('#thread').appendChild(msgEl(m, i === msgs.length - 1)));
 }
 
+// In Fikrat answers, [1] becomes a small numbered badge matching the source list.
+function cites(html, m) { return m.sources ? html.replace(/\[(\d{1,2})\]/g, '<span class="cite">$1</span>') : html; }
+
 function msgEl(m, isLast) {
   const el = document.createElement('div');
   el.className = 'msg ' + m.role;
@@ -587,19 +631,19 @@ function msgEl(m, isLast) {
     if (m.content) el.insertAdjacentHTML('beforeend', `<div class="bubble">${esc(m.content)}</div>`);
   } else {
     if (m.reasoning) el.insertAdjacentHTML('beforeend', `<details class="think"><summary>Thought process</summary><div>${esc(m.reasoning)}</div></details>`);
-    el.insertAdjacentHTML('beforeend', `<div class="md">${markdown(m.content)}</div>`);
+    el.insertAdjacentHTML('beforeend', `<div class="md">${cites(markdown(m.content), m)}</div>`);
   }
   if (m.sources?.length) {
     const cited = [...new Set([...m.content.matchAll(/\[(\d+)\]/g)].map((x) => +x[1]))].sort((a, b) => a - b);
     const list = m.sources.filter((x) => cited.includes(x.n));
-    if (list.length) el.insertAdjacentHTML('beforeend', `<div class="sources">${list.map((x) => { const id = x.name.match(/\[([\w-]{11})\]\s*$/)?.[1]; const t = esc(x.name.replace(/\s*\[[\w-]{11}\]\s*$/, '')); return `<span>[${x.n}] ${id ? `<a href="https://youtu.be/${id}" target="_blank" rel="noopener">${t}</a>` : t}</span>`; }).join('')}</div>`);
+    if (list.length) el.insertAdjacentHTML('beforeend', `<div class="sources"><span>Sources</span>${list.map((x) => { const id = x.name.match(/\[([\w-]{11})\]\s*$/)?.[1]; const t = esc(x.name.replace(/\s*\[[\w-]{11}\]\s*$/, '')); const inner = `<span class="cite">${x.n}</span><span>${t}</span>`; return id ? `<a class="src" href="https://youtu.be/${id}" target="_blank" rel="noopener" title="Open the video">${inner}</a>` : `<div class="src">${inner}</div>`; }).join('')}</div>`);
   }
   const acts = document.createElement('div');
   acts.className = 'actions';
   const btn = (icon, title, fn) => { const b = document.createElement('button'); b.innerHTML = icon; b.title = title; b.onclick = () => fn(b); acts.appendChild(b); };
   btn(ICON.copy, 'Copy', (b) => copy(m.content, b));
   if (m.role === 'assistant' && isLast) btn(ICON.redo, 'Regenerate', () => { if (!state.controller) { state.chat.messages.pop(); send(); } });
-  if (m.role === 'assistant' && m.model) acts.insertAdjacentHTML('beforeend', `<span class="tag">${esc(modelName(m.model))}</span>`);
+  if (m.role === 'assistant' && m.model && !m.sources) acts.insertAdjacentHTML('beforeend', `<span class="tag">${esc(modelName(m.model))}</span>`);
   el.appendChild(acts);
   return el;
 }
@@ -627,8 +671,13 @@ async function send() {
   let sys = state.settings.system || DEFAULT_PROMPT;
   let sources;
   if (fk) {
-    if (!fik.ready) { renderThread(); return $('#thread').insertAdjacentHTML('beforeend', '<div class="errbox">Choose the Fikrat folder first (left sidebar).</div>'); }
+    if (!fik.ready) await ensureFik();
+    if (!fik.ready) { renderThread(); return $('#thread').insertAdjacentHTML('beforeend', '<div class="errbox">Fikrat is not loaded. Use Try again in the sidebar.</div>'); }
+    renderThread();
+    $('#thread').insertAdjacentHTML('beforeend', `<div class="msg" id="searching"><div class="searching">Searching ${fik.docs.length.toLocaleString()} videos…</div></div>`);
+    $('#scroller').scrollTop = 1e9;
     const hits = await retrieve(chat.messages);
+    $('#searching')?.remove();
     if (!hits.length) {
       chat.messages.push({ role: 'assistant', content: 'I found nothing in your files for those words. Try different or more specific words, in the same language as the transcripts.' });
       chat.updated = Date.now(); saveChats(); renderThread(); renderList();
@@ -658,7 +707,7 @@ async function send() {
     painting = true;
     requestAnimationFrame(() => {
       painting = false;
-      md.innerHTML = markdown(reply.content);
+      md.innerHTML = cites(markdown(reply.content), reply);
       const s = $('#scroller');
       if (s.scrollHeight - s.scrollTop - s.clientHeight < 150) s.scrollTop = 1e9;
     });
@@ -732,12 +781,12 @@ input.onkeydown = (e) => {
   }
 };
 
-$('#composer').onsubmit = (e) => {
+$('#composer').onsubmit = async (e) => {
   e.preventDefault();
   const text = input.value.trim();
   if (state.controller || (!text && !state.files.length)) return;
   if (!state.chat) {
-    if (state.project === 'fikrat' && !fik.ready) return toast(fik.building ? 'Still indexing the folder…' : 'Choose the Fikrat folder first');
+    if (state.project === 'fikrat' && !fik.ready) { await ensureFik(); if (!fik.ready) return toast('Fikrat could not load. Try again.'); }
     state.chat = { id: Date.now().toString(36), project: state.project, title: (text || state.files[0].name).slice(0, 60), updated: Date.now(), messages: [] };
     state.chats.push(state.chat);
   }
@@ -831,30 +880,38 @@ const FIK_PROMPT = `You answer questions from numbered passages taken from the u
 // Encrypted bundle of the files, made by fikrat-build.mjs and hosted online (unreadable without the passphrase).
 const FIK_BUNDLE_URL = 'https://raw.githubusercontent.com/ecommillionaire/fikrat-data/main/fikrat.bin';
 
-const fik = { docs: [], post: new Map(), avg: 1, ready: false, building: false, handle: null, name: '' };
+const fik = { items: null, promise: null, docs: [], post: new Map(), avg: 1, ready: false, building: false, handle: null, name: '' };
 // Russian words change endings (Украины, Украине, Украину), so Cyrillic words are cut to their first 6 letters.
 const stem = (t) => (t.length > 6 && /^[\u0400-\u04ff]+$/.test(t) ? t.slice(0, 6) : t);
 const tokenize = (s) => (s.toLowerCase().match(/[\p{L}\p{N}]+/gu) || []).filter((t) => t.length < 40).map(stem);
 const tick = () => new Promise((r) => setTimeout(r));
 
-// The chosen folder is remembered (when the browser allows) so one click reconnects it.
-const idb = (mode, fn) => new Promise((res, rej) => {
-  const o = indexedDB.open('chat0', 1);
-  o.onupgradeneeded = () => o.result.createObjectStore('kv');
-  o.onerror = () => rej(o.error);
-  o.onsuccess = () => {
-    const tx = o.result.transaction('kv', mode);
-    const r = fn(tx.objectStore('kv'));
-    tx.oncomplete = () => res(r.result);
-    tx.onerror = () => rej(tx.error);
-  };
-});
-
 function fikStatus(text, pct) {
   $('#fikstatus').textContent = text;
   $('#fikbar').hidden = pct == null;
   if (pct != null) $('#fikbar i').style.width = pct + '%';
+  $('#fikdot').className = pct != null ? 'load' : fik.ready ? 'ok' : 'bad';
+  refreshWelcome();
 }
+
+const EXAMPLES = ['Почему Китай скупает золото?', 'Как Украине выбраться из пропасти?', 'What does he say about the Vatican and power?', 'Кто управляет Америкой?'];
+
+function refreshWelcome() {
+  const fk = state.project === 'fikrat';
+  $('#wlogo').hidden = !fk;
+  $('#wsub').hidden = !fk;
+  $('#chips').hidden = !fk || !fik.ready;
+  $('#wtitle').textContent = fk ? 'Ask Fikrat anything' : 'Ready when you are.';
+  if (fk) $('#wsub').textContent = fik.ready ? `Search all ${fik.docs.length.toLocaleString()} videos in any language. Every answer shows which videos it came from.` : fik.building || fik.promise ? 'Getting everything ready…' : 'Something went wrong loading the videos. Use Try again on the left.';
+  if (fk && !$('#chips').childElementCount) $('#chips').innerHTML = EXAMPLES.map((t) => `<button type="button">${esc(t)}</button>`).join('');
+}
+$('#chips').onclick = (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  input.value = b.textContent;
+  input.dispatchEvent(new Event('input'));
+  $('#composer').requestSubmit();
+};
 
 async function walk(dir, out) {
   for await (const [name, h] of dir.entries()) {
@@ -877,11 +934,11 @@ async function buildIndex(items, folderName) {
       for (const [t, n] of tf) { let p = fik.post.get(t); if (!p) fik.post.set(t, (p = [])); p.push(i, n); }
       fik.docs.push({ f, name: f.name.replace(/\.(txt|md)$/i, ''), len: toks.length });
       total += toks.length;
-      if (i % 25 === 0) { fikStatus(`Indexing ${i + 1} of ${items.length} files…`, ((i + 1) / items.length) * 100); await tick(); }
+      if (i % 25 === 0) { fikStatus(`Preparing ${i + 1} of ${items.length}…`, ((i + 1) / items.length) * 100); await tick(); }
     }
     fik.avg = total / Math.max(1, fik.docs.length);
     fik.ready = fik.docs.length > 0;
-    fikStatus(fik.ready ? `Ready: ${fik.docs.length} files from “${folderName}”` : 'No .txt files found in that folder.', null);
+    fikStatus(fik.ready ? `${fik.docs.length.toLocaleString()} videos ready${folderName ? ` · ${folderName}` : ''}` : 'No .txt files found in that folder.', null);
   } catch (e) {
     fikStatus('Could not read the folder: ' + e.message, null);
   }
@@ -902,7 +959,6 @@ $('#fikpick').onclick = async () => {
     try {
       const h = await showDirectoryPicker({ mode: 'read' });
       fik.handle = h;
-      idb('readwrite', (s) => s.put(h, 'dir')).catch(() => {});
       $('#fikre').hidden = false;
       return openFolder(h);
     } catch (e) { if (e.name === 'AbortError') return; }
@@ -915,37 +971,41 @@ $('#fikdir').onchange = (e) => {
   e.target.value = '';
   if (files.length) buildIndex(files, name); else fikStatus('No .txt files found in that folder.', null);
 };
-// Download the encrypted bundle, decrypt it here with the passphrase, and index it.
+// Download the encrypted Fikrat files and unlock them with the Fikrat password.
+async function fetchBundle(pass) {
+  const r = await fetch(state.settings.fikUrl || FIK_BUNDLE_URL, { cache: 'no-cache' });
+  if (!r.ok) throw new Error(r.status === 404 ? 'Fikrat files not found.' : 'Could not download the Fikrat files (' + r.status + ').');
+  const buf = new Uint8Array(await r.arrayBuffer());
+  if (String.fromCharCode(...buf.slice(0, 3)) !== 'FK1') throw new Error('Unexpected Fikrat file.');
+  const iterations = new DataView(buf.buffer).getUint32(3);
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: buf.slice(7, 23), iterations, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  let plain;
+  try { plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(23, 35) }, key, buf.slice(35)); }
+  catch { throw new Error('Wrong Fikrat password.'); }
+  const json = await new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  return JSON.parse(json).map(([name, text]) => ({ name, text: async () => text }));
+}
+
 async function loadOnline() {
-  const pass = $('#fikpass').value;
-  if (!pass) return fikStatus('Type the passphrase first.', null);
-  if (fik.building) return;
-  $('#fikonline').disabled = true;
+  $('#fikretry').hidden = true;
   try {
-    fikStatus('Downloading…', null);
-    const r = await fetch(state.settings.fikUrl || FIK_BUNDLE_URL, { cache: 'no-cache' });
-    if (!r.ok) throw new Error(r.status === 404 ? 'No online files found yet.' : 'Download failed (' + r.status + ').');
-    const buf = new Uint8Array(await r.arrayBuffer());
-    if (String.fromCharCode(...buf.slice(0, 3)) !== 'FK1') throw new Error('That file is not a Fikrat bundle.');
-    fikStatus('Unlocking…', null);
-    await tick();
-    const iterations = new DataView(buf.buffer).getUint32(3);
-    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
-    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: buf.slice(7, 23), iterations, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-    let plain;
-    try { plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(23, 35) }, key, buf.slice(35)); }
-    catch { throw new Error('Wrong passphrase.'); }
-    const json = await new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-    const items = JSON.parse(json).map(([name, text]) => ({ name, text: async () => text }));
-    $('#fikpass').value = '';
-    await buildIndex(items, 'online files');
+    fikStatus('Getting the videos ready…', 0);
+    const items = fik.items || (await fetchBundle(session.get('fikpass') || ''));
+    fik.items = null;
+    await buildIndex(items, null);
   } catch (e) {
     fikStatus(e.message, null);
+    $('#fikretry').hidden = false;
   }
-  $('#fikonline').disabled = false;
 }
-$('#fikonline').onclick = loadOnline;
-$('#fikpass').onkeydown = (e) => { if (e.key === 'Enter') loadOnline(); };
+// Starts loading once; later callers wait for the same load.
+function ensureFik() {
+  if (fik.ready) return Promise.resolve();
+  if (!fik.promise) fik.promise = loadOnline().finally(() => { fik.promise = null; });
+  return fik.promise;
+}
+$('#fikretry').onclick = ensureFik;
 
 $('#fikre').onclick = () => fik.handle && openFolder(fik.handle);
 
@@ -1025,25 +1085,15 @@ function setProject(p) {
   $$('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.p === p));
   $('#fikbox').hidden = !fk;
   $('#web').hidden = fk;
-  input.placeholder = fk ? 'Ask Fikrat' : 'Message chat0';
-  $('#welcome h2').textContent = fk ? 'Ask Fikrat anything.' : 'Ready when you are.';
-  if (fk && !fik.ready && !fik.building) fikSetup();
+  input.placeholder = fk ? 'Ask about anything in the videos…' : 'Message chat0';
+  $('#brand').textContent = fk ? 'Fikrat' : 'chat0';
+  $('#fine').textContent = fk ? 'Answers come from the video transcripts. Open the sources to check.' : 'AI can make mistakes. Check important info.';
+  refreshWelcome();
+  if (fk) ensureFik();
   state.chat = null;
   stop();
   renderThread();
   renderList();
-}
-
-async function fikSetup() {
-  fikStatus('Load your online files with the passphrase, or choose a folder on this computer.', null);
-  try {
-    fik.handle = (await idb('readonly', (s) => s.get('dir'))) || null;
-    if (fik.handle) {
-      $('#fikre').hidden = false;
-      if ((await fik.handle.queryPermission({ mode: 'read' })) === 'granted') return openFolder(fik.handle);
-      fikStatus(`Click Reload folder to reopen “${fik.handle.name}”, or choose another.`, null);
-    }
-  } catch {}
 }
 
 $('#tabs').onclick = (e) => { const b = e.target.closest('button'); if (b && b.dataset.p !== state.project) setProject(b.dataset.p); };
@@ -1054,6 +1104,7 @@ function startApp() {
   $('#gate').hidden = true;
   $('#app').hidden = false;
   setProject(state.project);
+  ensureFik(); // load Fikrat in the background so it's ready when needed
   input.focus();
 }
 
@@ -1063,7 +1114,7 @@ applyTheme();
 // the site asks for the password again.
 const reloaded = performance.getEntriesByType('navigation')[0]?.type === 'reload';
 if (!reloaded) { session.clear(); state.key = null; }
-if (state.key && (!LOCKED || session.get('lock') === LOCKED)) startApp();
+if (state.key && session.get('fikpass') && (!LOCKED || session.get('lock') === LOCKED)) startApp();
 else showGate();
 </script>
 </body>
