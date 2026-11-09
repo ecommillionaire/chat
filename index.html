@@ -70,6 +70,16 @@
   #keybox .btns button { padding: 5px 10px; font-size: 13px; border: 1px solid var(--line); }
   #keybox .btns button:hover { background: var(--raise); }
 
+  .tabs { display: flex; gap: 4px; background: var(--raise); border-radius: 10px; padding: 3px; margin-bottom: 8px; }
+  .tabs button { flex: 1; justify-content: center; padding: 6px; font-size: 14px; color: var(--dim); border-radius: 8px; }
+  .tabs button.on { background: var(--side); color: var(--ink); font-weight: 600; }
+  #fikbox { padding: 6px 6px 10px; font-size: 13px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  #fikbox .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  #fikbox .btns button { padding: 5px 10px; font-size: 13px; border: 1px solid var(--line); }
+  #fikbox .btns button:hover { background: var(--raise); }
+  #fikbar { height: 3px; background: var(--raise); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  #fikbar i { display: block; height: 100%; width: 0; background: var(--accent); }
+  .sources { margin-top: 8px; font-size: 12.5px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 4px 12px; }
   #main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
   #top { display: flex; align-items: center; gap: 4px; padding: 8px 10px 4px; }
   .brand { font-size: 17px; font-weight: 600; padding: 6px 10px; letter-spacing: -.01em; }
@@ -183,10 +193,18 @@
 <!-- ---------- app ---------- -->
 <div id="app" hidden>
   <aside id="side">
+    <div class="tabs" id="tabs"><button data-p="general" class="on">General</button><button data-p="fikrat">Fikrat</button></div>
     <button class="ghost newchat" id="newchat">
       <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>New chat
     </button>
     <input id="search" type="search" placeholder="Search chats" autocomplete="off">
+    <div id="fikbox" hidden>
+      <div id="fikstatus" class="muted"></div>
+      <div id="fikbar"><i></i></div>
+      <input type="password" id="fikpass" placeholder="Passphrase (online files)" autocomplete="off" style="margin-top:8px;padding:6px 10px;font-size:13px">
+      <div class="btns"><button id="fikonline">Load online</button><button id="fikpick">Choose folder</button><button id="fikre" hidden>Reload folder</button></div>
+      <input type="file" id="fikdir" webkitdirectory multiple hidden>
+    </div>
     <nav id="list"></nav>
 
     <div id="keybox">
@@ -236,7 +254,8 @@
 <dialog id="settings">
   <div class="dhead"><h3>Settings</h3><button class="icon" data-close>✕</button></div>
   <div class="dbody">
-    <label>Instructions<textarea id="system" rows="9" placeholder="How the assistant should answer"></textarea></label>
+    <label>Fikrat model (OpenRouter id)<input id="fikmodel" placeholder="deepseek/deepseek-v4-flash" autocomplete="off" spellcheck="false"></label>
+    <label>Instructions (General chats)<textarea id="system" rows="9" placeholder="How the assistant should answer"></textarea></label>
     <button class="primary" id="savesettings" style="width:100%">Save</button>
     <p class="muted small">Chats are saved in this browser only.</p>
   </div>
@@ -299,6 +318,7 @@ const state = {
   chat: null,        // the open chat
   files: [],         // attachments waiting to be sent
   web: false,
+  project: store.get('project', 'general'), // 'general' or 'fikrat'
   controller: null,
 };
 
@@ -493,6 +513,7 @@ function renderList() {
   const term = $('#search').value.trim().toLowerCase();
   const chats = [...state.chats]
     .sort((a, b) => b.updated - a.updated)
+    .filter((c) => (c.project || 'general') === state.project)
     .filter((c) => !term || c.title.toLowerCase().includes(term) || c.messages.some((m) => m.content.toLowerCase().includes(term)));
   const today = new Date().setHours(0, 0, 0, 0);
   const label = (t) => (t >= today ? 'Today' : t >= today - 864e5 ? 'Yesterday' : t >= today - 7 * 864e5 ? 'Previous 7 days' : 'Older');
@@ -568,6 +589,11 @@ function msgEl(m, isLast) {
     if (m.reasoning) el.insertAdjacentHTML('beforeend', `<details class="think"><summary>Thought process</summary><div>${esc(m.reasoning)}</div></details>`);
     el.insertAdjacentHTML('beforeend', `<div class="md">${markdown(m.content)}</div>`);
   }
+  if (m.sources?.length) {
+    const cited = [...new Set([...m.content.matchAll(/\[(\d+)\]/g)].map((x) => +x[1]))].sort((a, b) => a - b);
+    const list = m.sources.filter((x) => cited.includes(x.n));
+    if (list.length) el.insertAdjacentHTML('beforeend', `<div class="sources">${list.map((x) => { const id = x.name.match(/\[([\w-]{11})\]\s*$/)?.[1]; const t = esc(x.name.replace(/\s*\[[\w-]{11}\]\s*$/, '')); return `<span>[${x.n}] ${id ? `<a href="https://youtu.be/${id}" target="_blank" rel="noopener">${t}</a>` : t}</span>`; }).join('')}</div>`);
+  }
   const acts = document.createElement('div');
   acts.className = 'actions';
   const btn = (icon, title, fn) => { const b = document.createElement('button'); b.innerHTML = icon; b.title = title; b.onclick = () => fn(b); acts.appendChild(b); };
@@ -595,11 +621,25 @@ function stop() { state.controller?.abort(); }
 
 async function send() {
   const chat = state.chat;
-  const model = MODEL;
+  const fk = chat.project === 'fikrat';
+  const model = fk ? (state.settings.fikModel || FIKRAT_MODEL) : MODEL;
   const messages = chat.messages.map(toApi);
-  messages.unshift({ role: 'system', content: state.settings.system || DEFAULT_PROMPT });
+  let sys = state.settings.system || DEFAULT_PROMPT;
+  let sources;
+  if (fk) {
+    if (!fik.ready) { renderThread(); return $('#thread').insertAdjacentHTML('beforeend', '<div class="errbox">Choose the Fikrat folder first (left sidebar).</div>'); }
+    const hits = await retrieve(chat.messages);
+    if (!hits.length) {
+      chat.messages.push({ role: 'assistant', content: 'I found nothing in your files for those words. Try different or more specific words, in the same language as the transcripts.' });
+      chat.updated = Date.now(); saveChats(); renderThread(); renderList();
+      return;
+    }
+    sys = FIK_PROMPT + '\n\n' + hits.map((h) => `[${h.n}] from "${h.name}":\n${h.text}`).join('\n\n');
+    sources = hits.map((h) => ({ n: h.n, name: h.name }));
+  }
+  messages.unshift({ role: 'system', content: sys });
 
-  const reply = { role: 'assistant', content: '', model };
+  const reply = { role: 'assistant', content: '', model, ...(sources ? { sources } : {}) };
   chat.messages.push(reply);
   renderThread();
   const el = $('#thread').lastElementChild;
@@ -627,7 +667,7 @@ async function send() {
   try {
     // Only use providers that don't store or train on what you send.
     const body = { model, messages, stream: true, provider: { data_collection: 'deny' } };
-    if (state.web) body.plugins = [{ id: 'web' }];
+    if (state.web && !fk) body.plugins = [{ id: 'web' }];
     const r = await fetch(API + '/chat/completions', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + state.key, 'Content-Type': 'application/json', 'X-Title': 'chat0' },
@@ -697,7 +737,8 @@ $('#composer').onsubmit = (e) => {
   const text = input.value.trim();
   if (state.controller || (!text && !state.files.length)) return;
   if (!state.chat) {
-    state.chat = { id: Date.now().toString(36), title: (text || state.files[0].name).slice(0, 60), updated: Date.now(), messages: [] };
+    if (state.project === 'fikrat' && !fik.ready) return toast(fik.building ? 'Still indexing the folder…' : 'Choose the Fikrat folder first');
+    state.chat = { id: Date.now().toString(36), project: state.project, title: (text || state.files[0].name).slice(0, 60), updated: Date.now(), messages: [] };
     state.chats.push(state.chat);
   }
   state.chat.messages.push({ role: 'user', content: text, ...(state.files.length ? { files: state.files } : {}) });
@@ -747,11 +788,13 @@ function modelName(id) { return id === MODEL ? 'Auto' : id.split('/').pop(); }
 
 $('#settingsbtn').onclick = () => {
   $('#system').value = state.settings.system || DEFAULT_PROMPT;
+  $('#fikmodel').value = state.settings.fikModel || '';
   $('#settings').showModal();
 };
 $('#savesettings').onclick = () => {
   const sys = $('#system').value.trim();
   state.settings.system = sys === DEFAULT_PROMPT.trim() ? '' : sys; // empty means use the default
+  state.settings.fikModel = $('#fikmodel').value.trim();
   store.set('settings', state.settings);
   applyTheme();
   $('#settings').close();
@@ -773,13 +816,244 @@ $('#scrim').onclick = () => $('#app').classList.remove('open');
 $('#newchat').onclick = () => { $('#app').classList.remove('open'); newChat(); };
 $('#newchat2').onclick = newChat;
 
+
+// ---------- Fikrat: ask a folder of text files ----------
+// The folder is read in this browser and never uploaded. Each question finds the
+// best-matching passages locally (free), and only those go to a cheap model.
+
+const FIKRAT_MODEL = 'deepseek/deepseek-v4-flash';
+const FIK_PROMPT = `You answer questions from numbered passages taken from the user's text files (transcripts). The passages are below.
+- Use only what the passages say. If they don't contain the answer, say so plainly and suggest other search words. Never invent details.
+- After each claim, cite the passage(s) it came from, like [1] or [2][4].
+- The passages are only the best matches, not every file, so never claim something is absent from the files overall.
+- Be clear and concise.`;
+
+// Encrypted bundle of the files, made by fikrat-build.mjs and hosted online (unreadable without the passphrase).
+const FIK_BUNDLE_URL = 'https://raw.githubusercontent.com/ecommillionaire/fikrat-data/main/fikrat.bin';
+
+const fik = { docs: [], post: new Map(), avg: 1, ready: false, building: false, handle: null, name: '' };
+// Russian words change endings (Украины, Украине, Украину), so Cyrillic words are cut to their first 6 letters.
+const stem = (t) => (t.length > 6 && /^[\u0400-\u04ff]+$/.test(t) ? t.slice(0, 6) : t);
+const tokenize = (s) => (s.toLowerCase().match(/[\p{L}\p{N}]+/gu) || []).filter((t) => t.length < 40).map(stem);
+const tick = () => new Promise((r) => setTimeout(r));
+
+// The chosen folder is remembered (when the browser allows) so one click reconnects it.
+const idb = (mode, fn) => new Promise((res, rej) => {
+  const o = indexedDB.open('chat0', 1);
+  o.onupgradeneeded = () => o.result.createObjectStore('kv');
+  o.onerror = () => rej(o.error);
+  o.onsuccess = () => {
+    const tx = o.result.transaction('kv', mode);
+    const r = fn(tx.objectStore('kv'));
+    tx.oncomplete = () => res(r.result);
+    tx.onerror = () => rej(tx.error);
+  };
+});
+
+function fikStatus(text, pct) {
+  $('#fikstatus').textContent = text;
+  $('#fikbar').hidden = pct == null;
+  if (pct != null) $('#fikbar i').style.width = pct + '%';
+}
+
+async function walk(dir, out) {
+  for await (const [name, h] of dir.entries()) {
+    if (name.startsWith('.')) continue;
+    if (h.kind === 'directory') await walk(h, out);
+    else if (/\.(txt|md)$/i.test(name)) out.push(h);
+  }
+}
+
+async function buildIndex(items, folderName) {
+  fik.ready = false; fik.building = true; fik.docs = []; fik.post = new Map(); fik.name = folderName;
+  $('#fikpick').disabled = $('#fikre').disabled = true;
+  let total = 0;
+  try {
+    for (let i = 0; i < items.length; i++) {
+      const f = items[i].getFile ? await items[i].getFile() : items[i];
+      const toks = tokenize(f.name + ' ' + (await f.text()));
+      const tf = new Map();
+      for (const t of toks) tf.set(t, (tf.get(t) || 0) + 1);
+      for (const [t, n] of tf) { let p = fik.post.get(t); if (!p) fik.post.set(t, (p = [])); p.push(i, n); }
+      fik.docs.push({ f, name: f.name.replace(/\.(txt|md)$/i, ''), len: toks.length });
+      total += toks.length;
+      if (i % 25 === 0) { fikStatus(`Indexing ${i + 1} of ${items.length} files…`, ((i + 1) / items.length) * 100); await tick(); }
+    }
+    fik.avg = total / Math.max(1, fik.docs.length);
+    fik.ready = fik.docs.length > 0;
+    fikStatus(fik.ready ? `Ready: ${fik.docs.length} files from “${folderName}”` : 'No .txt files found in that folder.', null);
+  } catch (e) {
+    fikStatus('Could not read the folder: ' + e.message, null);
+  }
+  fik.building = false;
+  $('#fikpick').disabled = $('#fikre').disabled = false;
+}
+
+async function openFolder(handle) {
+  if (!(await handle.requestPermission({ mode: 'read' }) === 'granted')) return fikStatus('Folder access was not allowed.', null);
+  fikStatus('Reading folder…', 0);
+  const out = [];
+  await walk(handle, out);
+  await buildIndex(out, handle.name);
+}
+
+$('#fikpick').onclick = async () => {
+  if (window.showDirectoryPicker) {
+    try {
+      const h = await showDirectoryPicker({ mode: 'read' });
+      fik.handle = h;
+      idb('readwrite', (s) => s.put(h, 'dir')).catch(() => {});
+      $('#fikre').hidden = false;
+      return openFolder(h);
+    } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  $('#fikdir').click(); // browsers without the folder picker
+};
+$('#fikdir').onchange = (e) => {
+  const files = [...e.target.files].filter((f) => /\.(txt|md)$/i.test(f.name) && !f.name.startsWith('.'));
+  const name = e.target.files[0]?.webkitRelativePath.split('/')[0] || 'folder';
+  e.target.value = '';
+  if (files.length) buildIndex(files, name); else fikStatus('No .txt files found in that folder.', null);
+};
+// Download the encrypted bundle, decrypt it here with the passphrase, and index it.
+async function loadOnline() {
+  const pass = $('#fikpass').value;
+  if (!pass) return fikStatus('Type the passphrase first.', null);
+  if (fik.building) return;
+  $('#fikonline').disabled = true;
+  try {
+    fikStatus('Downloading…', null);
+    const r = await fetch(state.settings.fikUrl || FIK_BUNDLE_URL, { cache: 'no-cache' });
+    if (!r.ok) throw new Error(r.status === 404 ? 'No online files found yet.' : 'Download failed (' + r.status + ').');
+    const buf = new Uint8Array(await r.arrayBuffer());
+    if (String.fromCharCode(...buf.slice(0, 3)) !== 'FK1') throw new Error('That file is not a Fikrat bundle.');
+    fikStatus('Unlocking…', null);
+    await tick();
+    const iterations = new DataView(buf.buffer).getUint32(3);
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: buf.slice(7, 23), iterations, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    let plain;
+    try { plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(23, 35) }, key, buf.slice(35)); }
+    catch { throw new Error('Wrong passphrase.'); }
+    const json = await new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    const items = JSON.parse(json).map(([name, text]) => ({ name, text: async () => text }));
+    $('#fikpass').value = '';
+    await buildIndex(items, 'online files');
+  } catch (e) {
+    fikStatus(e.message, null);
+  }
+  $('#fikonline').disabled = false;
+}
+$('#fikonline').onclick = loadOnline;
+$('#fikpass').onkeydown = (e) => { if (e.key === 'Enter') loadOnline(); };
+
+$('#fikre').onclick = () => fik.handle && openFolder(fik.handle);
+
+// One tiny model call (a fraction of a cent) that lists words related to the question.
+// If it fails for any reason, the search just uses the user's own words.
+async function expandQuery(text) {
+  try {
+    const r = await fetch(API + '/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + state.key, 'Content-Type': 'application/json', 'X-Title': 'chat0' },
+      body: JSON.stringify({
+        model: state.settings.fikModel || FIKRAT_MODEL,
+        max_tokens: 150,
+        temperature: 0,
+        reasoning: { enabled: false },
+        provider: { data_collection: 'deny' },
+        messages: [{ role: 'user', content: `List 20 single words that speakers in video transcripts would likely say when talking about this question: synonyms, alternative names, related people, places and topics. The transcripts are mostly in Russian, so write most of the words in Russian (and a few in the question's own language if different). Output only the words, separated by spaces.\n\nQuestion: ${text.slice(0, 500)}` }],
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return r.ok ? (await r.json()).choices?.[0]?.message?.content || '' : '';
+  } catch { return ''; }
+}
+
+// Best matching passages for the latest question (and the one before it, for follow-ups).
+async function retrieve(msgs) {
+  const text = msgs.filter((m) => m.role === 'user').slice(-2).map((m) => m.content).join(' ');
+  const own = new Set(tokenize(text));
+  const extra = await expandQuery(text); // related words, so "America" also finds "USA"
+  const q = [...new Set([...own, ...tokenize(extra)])].filter((t) => fik.post.has(t));
+  if (!q.length) return [];
+  const N = fik.docs.length;
+  // The user's own words count double; the added related words count once.
+  const idf = new Map(q.map((t) => { const n = fik.post.get(t).length / 2; return [t, Math.log(1 + (N - n + 0.5) / (n + 0.5)) * (own.has(t) ? 2 : 1)]; }));
+
+  // 1. Rank whole files (BM25).
+  const fileScore = new Map();
+  for (const t of q) {
+    const p = fik.post.get(t);
+    for (let i = 0; i < p.length; i += 2) {
+      const d = p[i], tf = p[i + 1];
+      fileScore.set(d, (fileScore.get(d) || 0) + idf.get(t) * (tf * 2.2) / (tf + 1.2 * (0.25 + 0.75 * fik.docs[d].len / fik.avg)));
+    }
+  }
+  const top = [...fileScore].sort((a, b) => b[1] - a[1]).slice(0, 12);
+
+  // 2. Cut the best files into passages and rank those.
+  const cands = [];
+  for (const [d] of top) {
+    const words = (await fik.docs[d].f.text()).split(/\s+/);
+    for (let s = 0; s < words.length; s += 190) {
+      const win = words.slice(s, s + 240).join(' ');
+      const tf = new Map();
+      for (const t of tokenize(win)) if (idf.has(t)) tf.set(t, (tf.get(t) || 0) + 1);
+      let score = 0;
+      for (const [t, n] of tf) score += idf.get(t) * (n * 2.2) / (n + 1.2);
+      if (score > 0) cands.push({ d, score, text: win });
+    }
+  }
+  cands.sort((a, b) => b.score - a.score);
+  const per = new Map(), hits = [];
+  for (const c of cands) {
+    if ((per.get(c.d) || 0) >= 3) continue;
+    per.set(c.d, (per.get(c.d) || 0) + 1);
+    hits.push({ n: hits.length + 1, name: fik.docs[c.d].name, text: c.text });
+    if (hits.length === 10) break;
+  }
+  return hits;
+}
+
+// ---------- projects ----------
+
+function setProject(p) {
+  state.project = p;
+  store.set('project', p);
+  const fk = p === 'fikrat';
+  $$('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.p === p));
+  $('#fikbox').hidden = !fk;
+  $('#web').hidden = fk;
+  input.placeholder = fk ? 'Ask Fikrat' : 'Message chat0';
+  $('#welcome h2').textContent = fk ? 'Ask Fikrat anything.' : 'Ready when you are.';
+  if (fk && !fik.ready && !fik.building) fikSetup();
+  state.chat = null;
+  stop();
+  renderThread();
+  renderList();
+}
+
+async function fikSetup() {
+  fikStatus('Load your online files with the passphrase, or choose a folder on this computer.', null);
+  try {
+    fik.handle = (await idb('readonly', (s) => s.get('dir'))) || null;
+    if (fik.handle) {
+      $('#fikre').hidden = false;
+      if ((await fik.handle.queryPermission({ mode: 'read' })) === 'granted') return openFolder(fik.handle);
+      fikStatus(`Click Reload folder to reopen “${fik.handle.name}”, or choose another.`, null);
+    }
+  } catch {}
+}
+
+$('#tabs').onclick = (e) => { const b = e.target.closest('button'); if (b && b.dataset.p !== state.project) setProject(b.dataset.p); };
+
 // ---------- start ----------
 
 function startApp() {
   $('#gate').hidden = true;
   $('#app').hidden = false;
-  renderList();
-  renderThread();
+  setProject(state.project);
   input.focus();
 }
 
